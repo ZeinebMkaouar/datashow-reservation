@@ -1,6 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
+  /* Lovable / Shadcn variables */
+  --color-background: hsl(210 20% 98%);
+  --color-foreground: hsl(222 47% 11%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222 47% 11%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222 47% 11%);
+  --color-primary: hsl(224 76% 33%);
+  --color-primary-foreground: hsl(210 40% 98%);
+  --color-secondary: hsl(199 89% 48%);
+  --color-secondary-foreground: hsl(0 0% 100%);
+  --color-muted: hsl(210 20% 96%);
+  --color-muted-foreground: hsl(215 16% 47%);
+  --color-accent: hsl(243 75% 59%);
+  --color-accent-foreground: hsl(0 0% 100%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  --color-success: hsl(142 76% 36%);
+  --color-success-foreground: hsl(0 0% 100%);
+  --color-warning: hsl(38 92% 50%);
+  --color-warning-foreground: hsl(0 0% 100%);
+  --color-border: hsl(214 32% 91%);
+  --color-input: hsl(214 32% 91%);
+  --color-ring: hsl(224 76% 33%);
+
+  /* Sidebar variables */
+  --color-sidebar-background: hsl(224 76% 33%);
+  --color-sidebar-foreground: hsl(210 40% 98%);
+  --color-sidebar-primary: hsl(0 0% 100%);
+  --color-sidebar-primary-foreground: hsl(224 76% 33%);
+  --color-sidebar-accent: hsl(224 76% 40%);
+  --color-sidebar-accent-foreground: hsl(210 40% 98%);
+  --color-sidebar-border: hsl(224 60% 45%);
+  --color-sidebar-ring: hsl(199 89% 48%);
+  --color-sidebar-muted: hsl(224 50% 50%);
+
+  /* Tailwind Standard Scales (required for existing components) */
   --color-primary-50: #eff6ff;
   --color-primary-100: #dbeafe;
   --color-primary-200: #bfdbfe;
@@ -23,16 +61,30 @@
   --color-gray-800: #1e293b;
   --color-gray-900: #0f172a;
 
-  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --radius: 0.5rem;
+  --font-sans: 'Inter', sans-serif;
 }
 
 @layer base {
   body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-color: var(--color-gray-50);
-    color: var(--color-gray-800);
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .card-shadow {
+    box-shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.06), 0 1px 2px -1px hsl(0 0% 0% / 0.06);
+  }
+
+  .card-shadow-md {
+    box-shadow: 0 4px 6px -1px hsl(0 0% 0% / 0.07), 0 2px 4px -2px hsl(0 0% 0% / 0.05);
+  }
+
+  .sidebar-gradient {
+    background: linear-gradient(180deg, hsl(224 76% 33%) 0%, hsl(224 76% 25%) 100%);
   }
 }
 

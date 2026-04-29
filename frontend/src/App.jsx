@@ -1,11 +1,20 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ProfessorDashboard from './pages/ProfessorDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import Layout from './components/Layout';
-import ProtectedRoute from './components/ProtectedRoute';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ProfessorDashboard from "./pages/professor/ProfessorDashboard";
+import ProfessorSchedule from "./pages/professor/ProfessorSchedule";
+import ProfessorBook from "./pages/professor/ProfessorBook";
+import ProfessorReservations from "./pages/professor/ProfessorReservations";
+import ProfessorClaims from "./pages/professor/ProfessorClaims";
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminInventory from "./pages/admin/AdminInventory";
+import AdminRooms from "./pages/admin/AdminRooms";
+import AdminMaintenance from "./pages/admin/AdminMaintenance";
+import AdminClaims from "./pages/admin/AdminClaims";
+import AdminWeeks from "./pages/admin/AdminWeeks";
+import Layout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   const { isAuthenticated, user, loading } = useAuth();
@@ -21,50 +30,93 @@ function App() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={
-        isAuthenticated
-          ? <Navigate to={user?.role === 'ADMIN' ? '/admin/dashboard' : '/professor/dashboard'} replace />
-          : <Login />
-      } />
-      <Route path="/register" element={
-        isAuthenticated
-          ? <Navigate to={user?.role === 'ADMIN' ? '/admin/dashboard' : '/professor/dashboard'} replace />
-          : <Register />
-      } />
+      <Route
+        path="/login"
+        element={
+          isAuthenticated ? (
+            <Navigate
+              to={
+                user?.role === "ADMIN"
+                  ? "/admin/overview"
+                  : "/professor/dashboard"
+              }
+              replace
+            />
+          ) : (
+            <Login />
+          )
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          isAuthenticated ? (
+            <Navigate
+              to={
+                user?.role === "ADMIN"
+                  ? "/admin/overview"
+                  : "/professor/dashboard"
+              }
+              replace
+            />
+          ) : (
+            <Register />
+          )
+        }
+      />
 
       {/* Professor routes */}
-      <Route element={
-        <ProtectedRoute requiredRole="PROFESSOR">
-          <Layout />
-        </ProtectedRoute>
-      }>
+      <Route
+        element={
+          <ProtectedRoute requiredRole="PROFESSOR">
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/professor/dashboard" element={<ProfessorDashboard />} />
-        <Route path="/professor/calendar" element={
-          <div className="text-center py-20 text-gray-400">Booking Calendar — Coming Soon</div>
-        } />
+        <Route path="/professor/schedule" element={<ProfessorSchedule />} />
+        <Route path="/professor/book" element={<ProfessorBook />} />
+        <Route
+          path="/professor/reservations"
+          element={<ProfessorReservations />}
+        />
+        <Route path="/professor/claims" element={<ProfessorClaims />} />
       </Route>
 
       {/* Admin routes */}
-      <Route element={
-        <ProtectedRoute requiredRole="ADMIN">
-          <Layout />
-        </ProtectedRoute>
-      }>
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/rooms" element={
-          <div className="text-center py-20 text-gray-400">Manage Rooms — Coming Soon</div>
-        } />
-        <Route path="/admin/datashows" element={
-          <div className="text-center py-20 text-gray-400">Manage DataShows — Coming Soon</div>
-        } />
+      <Route
+        element={
+          <ProtectedRoute requiredRole="ADMIN">
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/admin/overview" element={<AdminOverview />} />
+        <Route path="/admin/inventory" element={<AdminInventory />} />
+        <Route path="/admin/rooms" element={<AdminRooms />} />
+        <Route path="/admin/maintenance" element={<AdminMaintenance />} />
+        <Route path="/admin/claims" element={<AdminClaims />} />
+        <Route path="/admin/weeks" element={<AdminWeeks />} />
       </Route>
 
       {/* Default redirect */}
-      <Route path="*" element={
-        isAuthenticated
-          ? <Navigate to={user?.role === 'ADMIN' ? '/admin/dashboard' : '/professor/dashboard'} replace />
-          : <Navigate to="/login" replace />
-      } />
+      <Route
+        path="*"
+        element={
+          isAuthenticated ? (
+            <Navigate
+              to={
+                user?.role === "ADMIN"
+                  ? "/admin/overview"
+                  : "/professor/dashboard"
+              }
+              replace
+            />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
     </Routes>
   );
 }

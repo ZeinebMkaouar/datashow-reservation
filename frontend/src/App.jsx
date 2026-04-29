@@ -14,6 +14,7 @@ import AdminMaintenance from "./pages/admin/AdminMaintenance";
 import AdminClaims from "./pages/admin/AdminClaims";
 import AdminWeeks from "./pages/admin/AdminWeeks";
 import Layout from "./components/Layout";
+import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -87,7 +88,7 @@ function App() {
       <Route
         element={
           <ProtectedRoute requiredRole="ADMIN">
-            <Layout />
+            <AdminLayout />
           </ProtectedRoute>
         }
       >

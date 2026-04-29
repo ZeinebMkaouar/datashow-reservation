@@ -1,94 +1,83 @@
 import { useState } from "react";
 import { DoorOpen, Search } from "lucide-react";
 
-const AdminRooms = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [rooms, setRooms] = useState([
-    { id: "A-101", building: "Building A", hasEquipment: true },
-    { id: "A-201", building: "Building A", hasEquipment: false },
-    { id: "A-302", building: "Building A", hasEquipment: false },
-    { id: "B-103", building: "Building B", hasEquipment: false },
-    { id: "B-205", building: "Building B", hasEquipment: true },
-    { id: "C-101", building: "Building C", hasEquipment: false },
-    { id: "C-302", building: "Building C", hasEquipment: true },
-  ]);
+const initialRooms = [
+  { id: "A-101", building: "A", equipped: true },
+  { id: "A-201", building: "A", equipped: false },
+  { id: "A-302", building: "A", equipped: false },
+  { id: "B-103", building: "B", equipped: false },
+  { id: "B-205", building: "B", equipped: true },
+  { id: "C-101", building: "C", equipped: false },
+  { id: "C-302", building: "C", equipped: true },
+];
 
-  const filtered = rooms.filter(
-    (room) =>
-      room.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      room.building.toLowerCase().includes(searchTerm.toLowerCase()),
+const AdminRooms = () => {
+  const [search, setSearch] = useState("");
+  const [rooms, setRooms] = useState(initialRooms);
+
+  const filtered = rooms.filter((room) =>
+    room.id.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const handleToggleEquipment = (id) => {
-    setRooms(
-      rooms.map((room) =>
-        room.id === id ? { ...room, hasEquipment: !room.hasEquipment } : room,
+  const toggleEquipped = (id) => {
+    setRooms((prev) =>
+      prev.map((room) =>
+        room.id === id ? { ...room, equipped: !room.equipped } : room,
       ),
     );
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <DoorOpen className="w-8 h-8 text-purple-500" />
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <DoorOpen className="w-8 h-8 text-primary" />
           Room Management
         </h1>
-        <p className="text-gray-600 text-sm lg:text-base mt-2">
+        <p className="text-muted-foreground mt-2">
           Manage rooms and their built-in equipment status.
         </p>
       </div>
 
-      {/* Search */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 lg:p-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search rooms..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-        </div>
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Search rooms..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-3xl border border-muted/50 bg-card px-11 py-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+        />
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-4 lg:px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                Room ID
-              </th>
-              <th className="px-4 lg:px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                Building
-              </th>
-              <th className="px-4 lg:px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                Built-in Equipment
-              </th>
+      <div className="bg-card rounded-3xl border border-muted/60 shadow-sm overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3">Room ID</th>
+              <th className="px-4 py-3">Building</th>
+              <th className="px-4 py-3">Built-in Equipment</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-muted/50">
             {filtered.map((room) => (
-              <tr key={room.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 lg:px-6 py-4 text-sm font-semibold text-gray-900">
+              <tr key={room.id} className="hover:bg-muted/30 transition-colors">
+                <td className="px-4 py-4 font-semibold text-foreground">
                   {room.id}
                 </td>
-                <td className="px-4 lg:px-6 py-4 text-sm text-gray-700">
-                  {room.building}
+                <td className="px-4 py-4 text-muted-foreground">
+                  Building {room.building}
                 </td>
-                <td className="px-4 lg:px-6 py-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <td className="px-4 py-4">
+                  <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={room.hasEquipment}
-                      onChange={() => handleToggleEquipment(room.id)}
-                      className="w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+                      checked={room.equipped}
+                      onChange={() => toggleEquipped(room.id)}
+                      className="h-4 w-4 rounded border-muted/50 text-primary focus:ring-primary"
                     />
-                    <span className="text-sm text-gray-700">
-                      {room.hasEquipment
+                    <span className="text-sm text-foreground">
+                      {room.equipped
                         ? "TV/Projector installed"
                         : "No equipment"}
                     </span>

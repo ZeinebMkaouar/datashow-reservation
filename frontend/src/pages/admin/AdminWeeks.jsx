@@ -1,85 +1,83 @@
 import { useState } from "react";
 import { Calendar } from "lucide-react";
 
-const AdminWeeks = () => {
-  const [autoOpen, setAutoOpen] = useState(true);
-  const [weeks, setWeeks] = useState([
-    { week: "Week of 2026-04-13", isOpen: true },
-    { week: "Week of 2026-04-20", isOpen: true },
-    { week: "Week of 2026-04-27", isOpen: false },
-    { week: "Week of 2026-05-04", isOpen: false },
-    { week: "Week of 2026-05-11", isOpen: false },
-  ]);
+const initialWeeks = [
+  { id: 1, label: "Week of 2026-04-13", open: true },
+  { id: 2, label: "Week of 2026-04-20", open: true },
+  { id: 3, label: "Week of 2026-04-27", open: false },
+  { id: 4, label: "Week of 2026-05-04", open: false },
+  { id: 5, label: "Week of 2026-05-11", open: false },
+];
 
-  const toggleWeek = (index) => {
-    const newWeeks = [...weeks];
-    newWeeks[index].isOpen = !newWeeks[index].isOpen;
-    setWeeks(newWeeks);
+const AdminWeeks = () => {
+  const [weeks, setWeeks] = useState(initialWeeks);
+  const [autoOpen, setAutoOpen] = useState(false);
+
+  const toggleWeek = (id) => {
+    setWeeks((prev) =>
+      prev.map((week) =>
+        week.id === id ? { ...week, open: !week.open } : week,
+      ),
+    );
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      {/* Header */}
+    <div className="space-y-6 animate-fade-in max-w-2xl">
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Calendar className="w-8 h-8 text-purple-500" />
           Week Management
         </h1>
-        <p className="text-gray-600 text-sm lg:text-base mt-2">
+        <p className="text-muted-foreground mt-2">
           Control which weeks are open for booking.
         </p>
       </div>
 
-      {/* Auto-Open Setting */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-semibold text-gray-900">Auto-Open Weeks</p>
-            <p className="text-sm text-gray-600 mt-1">
-              Automatically open the next week every Sunday at midnight.
-            </p>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              checked={autoOpen}
-              onChange={() => setAutoOpen(!autoOpen)}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-          </label>
+      <div className="bg-card rounded-3xl p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border border-muted/60 shadow-sm">
+        <div>
+          <p className="font-medium text-foreground">Auto-Open Weeks</p>
+          <p className="text-sm text-muted-foreground">
+            Automatically open the next week every Sunday at midnight.
+          </p>
         </div>
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={autoOpen}
+            onChange={() => setAutoOpen((prev) => !prev)}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 rounded-full bg-muted/50 peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/40"></div>
+          <div className="pointer-events-none absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></div>
+        </label>
       </div>
 
-      {/* Weeks List */}
-      <div className="space-y-3">
-        {weeks.map((item, index) => (
+      <div className="bg-card rounded-lg card-shadow divide-y border border-muted/60">
+        {weeks.map((week) => (
           <div
-            key={index}
-            className="bg-white rounded-xl border border-gray-100 shadow-sm p-6"
+            key={week.id}
+            className="p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
           >
-            <div className="flex items-center justify-between">
-              <p className="font-semibold text-gray-900">{item.week}</p>
-              <div className="flex items-center gap-3">
-                <span
-                  className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                    item.isOpen
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {item.isOpen ? "Open" : "Closed"}
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={item.isOpen}
-                    onChange={() => toggleWeek(index)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-              </div>
+            <div className="flex items-center gap-3">
+              <div
+                className={`h-3 w-3 rounded-full ${week.open ? "bg-success" : "bg-muted-foreground/40"}`}
+              />
+              <span className="font-medium text-foreground">{week.label}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
+                {week.open ? "Open" : "Closed"}
+              </span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={week.open}
+                  onChange={() => toggleWeek(week.id)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 rounded-full bg-muted/50 peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/40"></div>
+                <div className="pointer-events-none absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5"></div>
+              </label>
             </div>
           </div>
         ))}

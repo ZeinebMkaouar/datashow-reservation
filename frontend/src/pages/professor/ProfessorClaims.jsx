@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { MessageSquare, Info, AlertCircle } from "lucide-react";
 import api from "../../services/api";
 import ConfirmModal from "../../components/ConfirmModal";
+import { useTranslation } from "react-i18next";
 
 const ProfessorClaims = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     datashowId: "",
     issueType: "",
@@ -13,13 +15,8 @@ const ProfessorClaims = () => {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Confirm Modal State
   const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    type: "info",
-    onConfirm: null,
+    isOpen: false, title: "", message: "", type: "info", onConfirm: null,
   });
 
   useEffect(() => {
@@ -53,8 +50,8 @@ const ProfessorClaims = () => {
       await api.post('/claims', formData);
       setConfirmModal({
         isOpen: true,
-        title: "Success",
-        message: "Your claim has been submitted successfully. The administration will review it soon.",
+        title: t('profClaims.successTitle'),
+        message: t('profClaims.successMsg'),
         type: "success",
       });
       setFormData({ datashowId: "", issueType: "", description: "" });
@@ -62,8 +59,8 @@ const ProfessorClaims = () => {
       console.error("Failed to submit claim:", error);
       setConfirmModal({
         isOpen: true,
-        title: "Error",
-        message: "Failed to submit claim. Please try again later.",
+        title: t('profClaims.errorTitle'),
+        message: t('profClaims.errorMsg'),
         type: "error",
       });
     } finally {
@@ -72,7 +69,7 @@ const ProfessorClaims = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-10 text-muted-foreground">Loading...</div>;
+    return <div className="text-center py-10 text-muted-foreground">{t('profClaims.loading')}</div>;
   }
 
   return (
@@ -82,32 +79,28 @@ const ProfessorClaims = () => {
         onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
       />
 
-      {/* Header */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
           <MessageSquare className="w-8 h-8 text-primary" />
-          Help / Claims
+          {t('profClaims.title')}
         </h1>
         <p className="text-muted-foreground text-sm lg:text-base mt-2">
-          Report an issue with a projector or missing accessories.
+          {t('profClaims.subtitle')}
         </p>
       </div>
 
-      {/* Info */}
       <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm flex items-start gap-3">
         <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
         <span className="text-muted-foreground">
-          <strong className="text-foreground">Support Workflow:</strong> Your claims are sent directly to the maintenance team. If a DataShow is reported as broken, it will be inspected and moved to <strong className="text-foreground">Maintenance</strong> if necessary.
+          {t('profClaims.supportFlow')}
         </span>
       </div>
 
-      {/* Form */}
       <div className="bg-card rounded-xl card-shadow p-6 lg:p-8 border border-border">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* DataShow ID */}
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">
-              Select DataShow
+              {t('profClaims.selectDatashow')}
             </label>
             <select
               name="datashowId"
@@ -116,17 +109,16 @@ const ProfessorClaims = () => {
               className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
               required
             >
-              <option value="">Select a DataShow</option>
+              <option value="">{t('profClaims.selectDatashowOpt')}</option>
               {datashows.map(ds => (
                 <option key={ds._id} value={ds.numero}>{ds.numero} — {ds.marque} {ds.modele}</option>
               ))}
             </select>
           </div>
 
-          {/* Issue Type */}
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">
-              Issue Type
+              {t('profClaims.issueType')}
             </label>
             <select
               name="issueType"
@@ -135,23 +127,22 @@ const ProfessorClaims = () => {
               className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
               required
             >
-              <option value="">Select issue category</option>
-              <option value="not-working">Not working / Won't turn on</option>
-              <option value="poor-quality">Poor quality (Blurry/Dim)</option>
-              <option value="missing-accessories">Missing cables (HDMI/VGA/Remote)</option>
-              <option value="damaged">Physical damage</option>
-              <option value="other">Other issue</option>
+              <option value="">{t('profClaims.selectCategory')}</option>
+              <option value="not-working">{t('profClaims.notWorking')}</option>
+              <option value="poor-quality">{t('profClaims.poorQuality')}</option>
+              <option value="missing-accessories">{t('profClaims.missingAccessories')}</option>
+              <option value="damaged">{t('profClaims.damaged')}</option>
+              <option value="other">{t('profClaims.otherIssue')}</option>
             </select>
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">
-              Detailed Description
+              {t('profClaims.description')}
             </label>
             <textarea
               name="description"
-              placeholder="What exactly is the problem? Mention room number if relevant."
+              placeholder={t('profClaims.descPlaceholder')}
               value={formData.description}
               onChange={handleChange}
               rows="5"
@@ -160,16 +151,15 @@ const ProfessorClaims = () => {
             />
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={submitting}
             className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {submitting ? "Submitting..." : (
+            {submitting ? t('profClaims.submitting') : (
               <>
                 <AlertCircle className="w-4 h-4" />
-                Submit Claim
+                {t('profClaims.submitBtn')}
               </>
             )}
           </button>
@@ -178,7 +168,7 @@ const ProfessorClaims = () => {
 
       <div className="text-center">
         <p className="text-xs text-muted-foreground">
-          Claims are reviewed within 24-48 hours. For urgent technical support, please visit the IT office.
+          {t('profClaims.footer')}
         </p>
       </div>
     </div>

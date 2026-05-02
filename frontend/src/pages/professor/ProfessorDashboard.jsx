@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import {
   TrendingUp,
   Clock,
@@ -27,6 +28,7 @@ import { Link } from "react-router-dom";
 
 const ProfessorDashboard = () => {
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [usageBySlot, setUsageBySlot] = useState([]);
@@ -41,19 +43,19 @@ const ProfessorDashboard = () => {
         api.get('/reservations/my'),
         api.get('/sessions')
       ]);
-      
+
       setReservations(res.data);
-      
+
       // Calculate usage by slot dynamically
       const slotCount = {};
       sessRes.data.forEach(s => slotCount[s.name] = 0);
-      
+
       res.data.forEach(r => {
         if (slotCount[r.seance] !== undefined) {
           slotCount[r.seance]++;
         }
       });
-      
+
       setUsageBySlot(Object.keys(slotCount).map(slot => ({ slot, count: slotCount[slot] })));
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
@@ -64,7 +66,7 @@ const ProfessorDashboard = () => {
 
   const activeRes = reservations.filter(r => r.status === 'confirmed');
   const completedRes = reservations.filter(r => r.status === 'completed');
-  
+
   // Sort by date upcoming
   const upcomingReservations = [...activeRes]
     .sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -72,88 +74,84 @@ const ProfessorDashboard = () => {
 
   const stats = [
     {
-      label: "Active Reservations",
-      value: activeRes.length.toString(),
-      change: "Current bookings",
+      label: t('profDashboard.statResTitle'),
+      value: reservations.length.toString(),
       icon: TrendingUp,
       color: "text-primary",
+      description: t('profDashboard.statResDesc'),
     },
     {
-      label: "Total Bookings",
-      value: reservations.length.toString(),
-      change: "All time",
+      label: t('profDashboard.statUpcomingTitle'),
+      value: activeRes.length.toString(),
       icon: Clock,
       color: "text-secondary",
+      description: t('profDashboard.statUpcomingDesc'),
     },
     {
-      label: "Completed",
+      label: t('profDashboard.statDoneTitle'),
       value: completedRes.length.toString(),
-      change: "Finished sessions",
       icon: Check,
       color: "text-success",
+      description: t('profDashboard.statDoneDesc'),
     },
     {
-      label: "Pending Claims",
-      value: "0", 
-      change: "Avg 2d response",
+      label: t('profDashboard.statClaimsTitle'),
+      value: "0",
       icon: AlertCircle,
       color: "text-warning",
+      description: t('profDashboard.statClaimsDesc'),
     },
   ];
 
-  // Mock monthly usage since we might not have enough historical data yet
   const monthlyUsage = [
     { month: "Jan", bookings: 8 },
-    { month: "Feb", bookings: 12 },
+    { month: "Fév", bookings: 12 },
     { month: "Mar", bookings: 15 },
-    { month: "Apr", bookings: reservations.length },
+    { month: "Avr", bookings: reservations.length },
   ];
 
   if (loading) {
-    return <div className="text-center py-10 text-muted-foreground">Loading dashboard...</div>;
+    return <div className="text-center py-10 text-muted-foreground">{t('profDashboard.loading')}</div>;
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Welcome header */}
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-          Welcome back, {user?.fullName?.split(" ")[0] || "Professor"}
+        <h1 className="text-2xl font-bold text-foreground">
+          {t('profDashboard.greeting', { name: user?.fullName?.split(" ")[0] || "" })}
         </h1>
-        <p className="mt-1 text-muted-foreground text-sm lg:text-base">
-          Here's your reservation overview.
+        <p className="text-muted-foreground mt-1">
+          {t('profDashboard.subtitle')}
         </p>
       </div>
 
-      {/* Quick Start Guide */}
       <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-2xl p-6 shadow-sm">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4">
           <HelpCircle className="w-5 h-5 text-primary" />
-          Quick Start Guide: How to use the system
+          {t('profDashboard.quickStart')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
             <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">1</div>
-            <h3 className="font-semibold text-foreground">Set Schedule</h3>
-            <p className="text-sm text-muted-foreground">Go to <strong>My Schedule</strong> and fill in the rooms where you have classes. You only do this once.</p>
-            <Link to="/professor/schedule" className="text-sm font-medium text-primary hover:underline flex items-center gap-1 mt-2">Go to Schedule <ArrowRight className="w-4 h-4" /></Link>
+            <h3 className="font-semibold text-foreground">{t('profDashboard.setupScheduleTitle')}</h3>
+            <p className="text-sm text-muted-foreground">{t('profDashboard.setupScheduleDesc')}</p>
+            <Link to="/professor/schedule" className="text-sm font-medium text-primary hover:underline flex items-center gap-1 mt-2">{t('profDashboard.setupScheduleLink')} <ArrowRight className="w-4 h-4" /></Link>
           </div>
           <div className="space-y-2">
             <div className="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center font-bold">2</div>
-            <h3 className="font-semibold text-foreground">Fast Booking</h3>
-            <p className="text-sm text-muted-foreground">Go to <strong>Book DataShow</strong>. Choose a date. We'll automatically find your class and assign a projector!</p>
-            <Link to="/professor/book" className="text-sm font-medium text-secondary hover:underline flex items-center gap-1 mt-2">Book a Device <ArrowRight className="w-4 h-4" /></Link>
+            <h3 className="font-semibold text-foreground">{t('profDashboard.fastBookTitle')}</h3>
+            <p className="text-sm text-muted-foreground">{t('profDashboard.fastBookDesc')}</p>
+            <Link to="/professor/book" className="text-sm font-medium text-secondary hover:underline flex items-center gap-1 mt-2">{t('profDashboard.fastBookLink')} <ArrowRight className="w-4 h-4" /></Link>
           </div>
           <div className="space-y-2">
             <div className="w-10 h-10 rounded-full bg-warning text-white flex items-center justify-center font-bold">3</div>
-            <h3 className="font-semibold text-foreground">Report Issues</h3>
-            <p className="text-sm text-muted-foreground">Missing a cable? Device broken? Go to <strong>Help/Claims</strong> to notify the administration immediately.</p>
-            <Link to="/professor/claims" className="text-sm font-medium text-warning hover:underline flex items-center gap-1 mt-2">Report Issue <ArrowRight className="w-4 h-4" /></Link>
+            <h3 className="font-semibold text-foreground">{t('profDashboard.reportProblemTitle')}</h3>
+            <p className="text-sm text-muted-foreground">{t('profDashboard.reportProblemDesc')}</p>
+            <Link to="/professor/claims" className="text-sm font-medium text-warning hover:underline flex items-center gap-1 mt-2">{t('profDashboard.reportProblemLink')} <ArrowRight className="w-4 h-4" /></Link>
           </div>
         </div>
       </div>
 
-      {/* Stats grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -172,7 +170,7 @@ const ProfessorDashboard = () => {
                   </p>
                   <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                     <TrendingUp className="w-3 h-3" />
-                    {stat.change}
+                    {stat.description}
                   </p>
                 </div>
                 <Icon className={`w-8 h-8 ${stat.color} opacity-80`} />
@@ -182,13 +180,9 @@ const ProfessorDashboard = () => {
         })}
       </div>
 
-      {/* Charts and Upcoming */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Usage by Slot Chart */}
         <div className="bg-card rounded-xl card-shadow p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-6">
-            Usage by Slot
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground mb-6">{t('profDashboard.usageBySlot')}</h2>
           <div className="h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={usageBySlot} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -201,11 +195,8 @@ const ProfessorDashboard = () => {
           </div>
         </div>
 
-        {/* Monthly Bookings Chart */}
         <div className="bg-card rounded-xl card-shadow p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-6">
-            Monthly Bookings
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground mb-6">{t('profDashboard.monthlyRes')}</h2>
           <div className="h-[200px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyUsage} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -220,16 +211,15 @@ const ProfessorDashboard = () => {
         </div>
       </div>
 
-      {/* Upcoming Reservations */}
       <div className="bg-card rounded-xl card-shadow">
         <div className="p-5 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">
-            Upcoming Reservations
+            {t('profDashboard.upcomingResTitle')}
           </h2>
         </div>
         <div className="divide-y divide-border">
           {upcomingReservations.length === 0 && (
-            <div className="p-4 text-center text-muted-foreground">No upcoming reservations.</div>
+            <div className="p-4 text-center text-muted-foreground">{t('profDashboard.noUpcoming')}</div>
           )}
           {upcomingReservations.map((res) => (
             <div
@@ -242,10 +232,10 @@ const ProfessorDashboard = () => {
                 </div>
                 <div>
                   <p className="font-medium text-foreground">
-                    {new Date(res.date).toLocaleDateString('en-GB', { weekday: 'long' })} — Slot {res.seance}
+                    {new Date(res.date).toLocaleDateString(i18n.language, { weekday: 'long' })} — {t('common.slot')} {res.seance}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Room {res.salle} · DataShow: {res.datashow?.numero || 'Unknown'}
+                    {t('common.room')} {res.salle} · DataShow: {res.datashow?.numero || t('profDashboard.unknown')}
                   </p>
                 </div>
               </div>

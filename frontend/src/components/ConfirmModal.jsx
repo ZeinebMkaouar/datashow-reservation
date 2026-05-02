@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle, Info, X, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 /**
  * Reusable modal component for confirmations, alerts, and success messages.
@@ -51,13 +52,18 @@ const ConfirmModal = ({
   isOpen,
   onClose,
   onConfirm,
-  title = "Confirm",
-  message = "",
+  title,
+  message,
+  confirmText,
+  cancelText,
   type = "info",
-  confirmText = "Confirm",
-  cancelText = "Cancel",
   loading = false,
 }) => {
+  const { t } = useTranslation();
+  const resolvedTitle = title || t('common.confirm');
+  const resolvedMessage = message || '';
+  const resolvedConfirmText = confirmText || t('common.confirm');
+  const resolvedCancelText = cancelText || t('common.cancel');
   if (!isOpen) return null;
 
   const config = typeConfig[type] || typeConfig.info;
@@ -72,8 +78,8 @@ const ConfirmModal = ({
             <Icon className={`w-5 h-5 ${config.iconColor}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-            <p className="text-sm text-muted-foreground mt-1">{message}</p>
+            <h3 className="text-lg font-semibold text-foreground">{resolvedTitle}</h3>
+            <p className="text-sm text-muted-foreground mt-1">{resolvedMessage}</p>
           </div>
           <button
             onClick={onClose}
@@ -92,14 +98,14 @@ const ConfirmModal = ({
                 disabled={loading}
                 className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg"
               >
-                {cancelText}
+                {resolvedCancelText}
               </button>
               <button
                 onClick={onConfirm}
                 disabled={loading}
                 className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 ${config.confirmBg}`}
               >
-                {loading ? "Please wait..." : confirmText}
+                {loading ? t('common.pleaseWait') : resolvedConfirmText}
               </button>
             </>
           ) : (

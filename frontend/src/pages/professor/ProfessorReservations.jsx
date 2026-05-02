@@ -20,12 +20,16 @@ const ProfessorReservations = () => {
   });
 
   useEffect(() => {
-    fetchReservations();
-  }, []);
+    const delayDebounceFn = setTimeout(() => {
+      fetchReservations();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm, statusFilter]);
 
   const fetchReservations = async () => {
     try {
-      const response = await api.get('/reservations/my');
+      const response = await api.get(`/reservations/my?search=${searchTerm}&status=${statusFilter}`);
       setReservations(response.data);
     } catch (error) {
       console.error("Failed to fetch reservations:", error);
@@ -69,21 +73,9 @@ const ProfessorReservations = () => {
   const rooms = [...new Set(reservations.map((res) => res.salle))].filter(Boolean);
 
   const filtered = reservations.filter((res) => {
-    const dsNum = res.datashow?.numero || "";
-    const rmName = res.salle || "";
-    
-    const matchesSearch =
-      rmName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      dsNum.toLowerCase().includes(searchTerm.toLowerCase());
-      
-    const matchesStatus =
-      statusFilter === "All Status" || res.status === statusFilter;
-      
-    const matchesRoom =
-      roomFilter === "All Rooms" || rmName === roomFilter;
-      
-    return matchesSearch && matchesStatus && matchesRoom;
-  });
+    const matchesRoom = roomFilter === "All Rooms" || res.salle === roomFilter;
+    return matchesRoom;
+  }); // Room filter remains frontend for now
 
   const exportCSV = () => {
     const header = "Date,Slot,Room,DataShow,Type,Status\n";

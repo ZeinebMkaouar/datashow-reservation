@@ -40,8 +40,12 @@ export class ReservationsController {
    * Returns the current professor's reservations.
    */
   @Get('my')
-  findMy(@Request() req) {
-    return this.reservationsService.findByProfessor(req.user.sub);
+  findMy(
+    @Request() req,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.reservationsService.findByProfessor(req.user.sub, { search, status });
   }
 
   /**
@@ -51,8 +55,11 @@ export class ReservationsController {
   @Get('all')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  findAll() {
-    return this.reservationsService.findAll();
+  findAll(
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.reservationsService.findAll({ search, status });
   }
 
   /**

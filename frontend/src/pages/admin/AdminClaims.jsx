@@ -26,11 +26,11 @@ const AdminClaims = () => {
 
   useEffect(() => {
     fetchClaims();
-  }, []);
+  }, [filter]);
 
   const fetchClaims = async () => {
     try {
-      const response = await api.get('/claims/all');
+      const response = await api.get(`/claims/all?status=${filter}`);
       setClaims(response.data);
     } catch (error) {
       console.error("Failed to fetch claims:", error);
@@ -110,13 +110,13 @@ const AdminClaims = () => {
       {/* Stats + Filter */}
       <div className="flex flex-wrap items-center gap-3">
         <button onClick={() => setFilter("all")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-          All ({claims.length})
+          All
         </button>
         <button onClick={() => setFilter("open")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'open' ? 'bg-warning text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-          <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Open ({openClaims.length})</span>
+          <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Open</span>
         </button>
         <button onClick={() => setFilter("resolved")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'resolved' ? 'bg-success text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-          <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5" /> Resolved ({resolvedClaims.length})</span>
+          <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5" /> Resolved</span>
         </button>
       </div>
 

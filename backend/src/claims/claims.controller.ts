@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Put,
-  Body, Param, Request, UseGuards,
+  Body, Param, Request, UseGuards, Query,
 } from '@nestjs/common';
 import { ClaimsService } from './claims.service';
 import { CreateClaimDto } from './dto/create-claim.dto';
@@ -27,8 +27,11 @@ export class ClaimsController {
   @Get('all')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')
-  findAll() {
-    return this.claimsService.findAll();
+  findAll(
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.claimsService.findAll({ search, status });
   }
 
   @Put(':id/resolve')

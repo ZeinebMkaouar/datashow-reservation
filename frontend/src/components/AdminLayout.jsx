@@ -13,21 +13,26 @@ import {
   Menu,
   Bell,
   PanelLeft,
+  ClipboardList,
+  Clock,
 } from "lucide-react";
 
 const navItems = [
   { title: "Overview", url: "/admin/overview", icon: LayoutDashboard },
   { title: "Inventory", url: "/admin/inventory", icon: Package },
+  { title: "All Reservations", url: "/admin/reservations", icon: ClipboardList },
   { title: "Room Management", url: "/admin/rooms", icon: DoorOpen },
   { title: "Maintenance Logs", url: "/admin/maintenance", icon: Wrench },
   { title: "Claims", url: "/admin/claims", icon: MessageSquare },
   { title: "Week Management", url: "/admin/weeks", icon: Settings },
+  { title: "Session Times", url: "/admin/sessions", icon: Clock },
 ];
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -35,18 +40,30 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
+    <div className="h-screen flex overflow-hidden bg-gray-50">
+      {/* Mobile overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col ${collapsed ? "w-20" : "w-72"} transition-all duration-300 bg-sidebar-background text-sidebar-foreground border-r border-muted/50`}
+        className={`fixed inset-y-0 left-0 z-50 lg:static lg:inset-auto lg:translate-x-0 flex flex-col h-full ${
+          collapsed ? "lg:w-20" : "lg:w-72"
+        } transition-all duration-300 sidebar-gradient text-white border-r border-white/10 ${
+          mobileMenuOpen ? "translate-x-0 w-72" : "-translate-x-full"
+        } overflow-hidden`}
       >
-        <div className={`p-4 ${collapsed ? "px-2" : ""}`}>
-          <div className="flex items-center gap-2">
-            <MonitorPlay className="w-6 h-6" />
-            {!collapsed && <span className="font-bold text-lg">DataShow</span>}
-          </div>
+        <div className={`p-6 flex items-center border-b border-white/10 ${collapsed ? "lg:justify-center" : ""}`}>
+          <MonitorPlay className="w-6 h-6 text-white shrink-0" />
+          <span className={`font-bold transition-all duration-300 ${collapsed ? "lg:opacity-0 lg:w-0 lg:ml-0" : "opacity-100 ml-3 text-xl"} overflow-hidden whitespace-nowrap tracking-tight`}>
+            DataShow
+          </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 py-3">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 overflow-x-hidden">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -54,61 +71,80 @@ const AdminLayout = () => {
                 key={item.title}
                 to={item.url}
                 end
+                onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-3 py-2 mb-1 text-sm transition-colors ${
+                  `flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 ${
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  }`
+                      ? "bg-white/10 text-white"
+                      : "text-white/70 hover:bg-white/5 hover:text-white"
+                  } ${collapsed ? "lg:justify-center" : ""}`
                 }
+                title={collapsed ? item.title : ""}
               >
-                <Icon className="w-4 h-4" />
-                {!collapsed && <span>{item.title}</span>}
+                <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+                <span className={`transition-all duration-300 ${collapsed ? "lg:opacity-0 lg:w-0 lg:ml-0" : "opacity-100 ml-3"} overflow-hidden whitespace-nowrap`}>
+                  {item.title}
+                </span>
               </NavLink>
             );
           })}
         </div>
 
-        <div className="mt-auto p-3">
+        <div className="mt-auto p-4 border-t border-white/10">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
+            className={`flex items-center w-full rounded-lg px-3 py-2 text-white/70 hover:bg-white/5 hover:text-white transition-all duration-300 cursor-pointer ${collapsed ? "lg:justify-center" : ""}`}
+            title={collapsed ? "Sign Out" : ""}
           >
-            <LogOut className="w-4 h-4" />
-            {!collapsed && <span>Sign Out</span>}
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            <span className={`transition-all duration-300 ${collapsed ? "lg:opacity-0 lg:w-0 lg:ml-0" : "opacity-100 ml-3"} overflow-hidden whitespace-nowrap`}>
+              Sign Out
+            </span>
           </button>
         </div>
       </aside>
 
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${collapsed ? "ml-20" : "ml-72"}`}>
-        <header className="h-14 flex items-center justify-between border-b border-muted/50 bg-card px-4">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0 z-30 backdrop-blur-sm bg-white/95">
           <div className="flex items-center gap-3">
+            {/* Mobile Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
             <button
               onClick={() => setCollapsed((prev) => !prev)}
-              className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+              className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors cursor-pointer"
             >
               <PanelLeft className={`w-5 h-5 transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`} />
             </button>
-            <span className="text-sm font-medium text-muted-foreground">Admin Portal</span>
+            <span className="text-sm font-medium text-gray-500">Admin Portal</span>
           </div>
+          
           <div className="flex items-center gap-3">
-            <button className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl bg-muted/70 text-muted-foreground hover:bg-muted transition-colors cursor-pointer">
+            <button className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors cursor-pointer">
               <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-white font-semibold">
+              <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold border border-white">
                 3
               </span>
             </button>
             <div className="hidden md:flex flex-col text-right">
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-sm font-medium text-gray-900">
                 {user?.fullName}
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-gray-500">
                 Administrator
               </span>
             </div>
+            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+              {user?.fullName?.charAt(0)}
+            </div>
           </div>
         </header>
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6 overflow-y-auto">
           <Outlet />
         </main>
       </div>

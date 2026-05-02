@@ -15,8 +15,8 @@ export class RepairsController {
   constructor(private repairsService: RepairsService) {}
 
   @Get()
-  findAll() {
-    return this.repairsService.findAll();
+  findAll(@Query('search') search?: string) {
+    return this.repairsService.findAll(search);
   }
 
   @Get('datashow/:datashowId')

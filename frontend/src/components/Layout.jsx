@@ -57,7 +57,7 @@ const Layout = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="h-screen flex overflow-hidden bg-gray-50">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -68,24 +68,22 @@ const Layout = () => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 ${isCollapsed ? "lg:w-20" : "lg:w-64"} sidebar-gradient text-white transition-all duration-300 ease-in-out lg:translate-x-0 flex flex-col ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 lg:static lg:inset-auto lg:translate-x-0 flex flex-col h-full ${
+          isCollapsed ? "lg:w-20" : "lg:w-72"
+        } transition-all duration-300 sidebar-gradient text-white border-r border-white/10 ${
+          sidebarOpen ? "translate-x-0 w-72" : "-translate-x-full"
+        } overflow-hidden`}
       >
         {/* Logo */}
-        <div className={`flex-shrink-0 flex items-center gap-3 py-5 border-b border-white/10 ${isCollapsed ? "justify-center px-0" : "px-6"}`}>
-          <Projector className="w-6 h-6 text-white" />
-          {!isCollapsed && <h1 className="text-xl font-bold tracking-tight">DataShow</h1>}
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="ml-auto lg:hidden text-gray-400 hover:text-white"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        <div className={`p-6 flex items-center border-b border-white/10 ${isCollapsed ? "lg:justify-center" : ""}`}>
+          <Projector className="w-6 h-6 text-white shrink-0" />
+          <h1 className={`font-bold tracking-tight transition-all duration-300 ${isCollapsed ? "lg:opacity-0 lg:w-0 lg:ml-0" : "opacity-100 ml-3 text-xl"} overflow-hidden whitespace-nowrap`}>
+            DataShow
+          </h1>
         </div>
 
         {/* Nav links */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto overflow-x-hidden">
           {links.map((link) => {
             const Icon = link.icon;
             const active = isActive(link.to);
@@ -94,15 +92,17 @@ const Layout = () => {
                 key={link.to}
                 to={link.to}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                className={`flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 ${
                   active
                     ? "bg-white/10 text-white"
                     : "text-white/70 hover:bg-white/5 hover:text-white"
-                } ${isCollapsed ? "justify-center" : ""}`}
+                } ${isCollapsed ? "lg:justify-center" : ""}`}
                 title={isCollapsed ? link.label : ""}
               >
                 <Icon className="w-[18px] h-[18px] flex-shrink-0" />
-                {!isCollapsed && <span>{link.label}</span>}
+                <span className={`transition-all duration-300 ${isCollapsed ? "lg:opacity-0 lg:w-0 lg:ml-0" : "opacity-100 ml-3"} overflow-hidden whitespace-nowrap`}>
+                  {link.label}
+                </span>
               </Link>
             );
           })}
@@ -112,19 +112,21 @@ const Layout = () => {
         <div className="mt-auto p-4 border-t border-white/10">
           <button
             onClick={handleLogout}
-            className={`flex items-center gap-3 w-full px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-colors cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
+            className={`flex items-center w-full rounded-lg px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-all duration-300 cursor-pointer ${isCollapsed ? "lg:justify-center" : ""}`}
             title={isCollapsed ? "Sign Out" : ""}
           >
-            <LogOut className="w-5 h-5" />
-            {!isCollapsed && <span>Sign Out</span>}
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            <span className={`transition-all duration-300 ${isCollapsed ? "lg:opacity-0 lg:w-0 lg:ml-0" : "opacity-100 ml-3"} overflow-hidden whitespace-nowrap`}>
+              Sign Out
+            </span>
           </button>
         </div>
       </aside>
 
       {/* Main content */}
-      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? "lg:ml-20" : "lg:ml-64"} min-h-screen`}>
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Top bar */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-4 lg:px-6 sticky top-0 z-30 backdrop-blur-sm bg-white/95">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-4 lg:px-6 shrink-0 z-30 backdrop-blur-sm bg-white/95">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
@@ -160,7 +162,7 @@ const Layout = () => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+        <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
           <Outlet />
         </main>
       </div>

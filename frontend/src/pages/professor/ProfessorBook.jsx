@@ -15,10 +15,6 @@ const ProfessorBook = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   
-  const [weeks, setWeeks] = useState([]);
-  const [currentWeekStatus, setCurrentWeekStatus] = useState(null);
-  const [rooms, setRooms] = useState([]);
-
   // Confirm Modal State
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -28,19 +24,25 @@ const ProfessorBook = () => {
     onConfirm: null,
   });
 
-  const slots = [
-    { id: "S1", label: "S1 (08:00-09:30)" },
-    { id: "S2", label: "S2 (10:00-11:30)" },
-    { id: "S3", label: "S3 (11:30-13:00)" },
-    { id: "S4", label: "S4 (14:00-15:30)" },
-    { id: "S5", label: "S5 (15:30-17:00)" },
-    { id: "S6", label: "S6 (17:00-18:30)" },
-  ];
+  const [weeks, setWeeks] = useState([]);
+  const [currentWeekStatus, setCurrentWeekStatus] = useState(null);
+  const [rooms, setRooms] = useState([]);
+  const [slots, setSlots] = useState([]);
 
-  // Fetch weeks and rooms on mount
+  // Fetch initial data
   useEffect(() => {
-    api.get('/weeks').then(res => setWeeks(res.data)).catch(console.error);
-    api.get('/rooms').then(res => setRooms(res.data)).catch(console.error);
+    Promise.all([
+      api.get('/weeks'),
+      api.get('/rooms'),
+      api.get('/sessions')
+    ]).then(([weeksRes, roomsRes, sessRes]) => {
+      setWeeks(weeksRes.data);
+      setRooms(roomsRes.data);
+      setSlots(sessRes.data.map(s => ({
+        id: s.name,
+        label: `${s.name} (${s.startTime}-${s.endTime})`
+      })));
+    }).catch(console.error);
   }, []);
 
   // Determine week status when date changes

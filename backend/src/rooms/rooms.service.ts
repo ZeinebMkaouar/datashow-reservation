@@ -19,8 +19,16 @@ export class RoomsService {
     return new this.roomModel(createRoomDto).save();
   }
 
-  async findAll(): Promise<RoomDocument[]> {
-    return this.roomModel.find().sort({ name: 1 }).exec();
+  async findAll(search?: string): Promise<RoomDocument[]> {
+    const filter = search
+      ? {
+          $or: [
+            { name: new RegExp(search, 'i') },
+            { building: new RegExp(search, 'i') },
+          ],
+        }
+      : {};
+    return this.roomModel.find(filter).sort({ name: 1 }).exec();
   }
 
   async findById(id: string): Promise<RoomDocument> {

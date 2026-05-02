@@ -24,12 +24,16 @@ const AdminRooms = () => {
   });
 
   useEffect(() => {
-    fetchRooms();
-  }, []);
+    const delayDebounceFn = setTimeout(() => {
+      fetchRooms();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [search]);
 
   const fetchRooms = async () => {
     try {
-      const response = await api.get('/rooms');
+      const response = await api.get(`/rooms?search=${search}`);
       setRooms(response.data);
     } catch (error) {
       console.error("Failed to fetch rooms:", error);
@@ -38,10 +42,7 @@ const AdminRooms = () => {
     }
   };
 
-  const filtered = rooms.filter((room) =>
-    room.name.toLowerCase().includes(search.toLowerCase()) ||
-    room.building?.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = rooms; // Now filtered by backend
 
   const toggleEquipped = async (id, currentStatus) => {
     try {

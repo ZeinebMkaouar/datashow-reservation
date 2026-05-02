@@ -31,13 +31,20 @@ const AdminMaintenance = () => {
   });
 
   useEffect(() => {
-    fetchLogs();
+    const delayDebounceFn = setTimeout(() => {
+      fetchLogs();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [search]);
+
+  useEffect(() => {
     fetchDatashows();
   }, []);
 
   const fetchLogs = async () => {
     try {
-      const response = await api.get('/repairs');
+      const response = await api.get(`/repairs?search=${search}`);
       setLogs(response.data);
     } catch (error) {
       console.error("Failed to fetch repairs:", error);

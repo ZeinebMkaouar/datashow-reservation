@@ -3,39 +3,13 @@ import { Calendar, Info } from "lucide-react";
 import api from "../../services/api";
 import ConfirmModal from "../../components/ConfirmModal";
 
-const mapBackendToFrontend = (backendSchedule) => {
-  const fe = {
-    S1: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
-    S2: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
-    S3: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
-    S4: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
-    S5: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
-    S6: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
-  };
-
-  if (!backendSchedule) return fe;
-
-  const dayMap = { monday: "Mon", tuesday: "Tue", wednesday: "Wed", thursday: "Thu", friday: "Fri", saturday: "Sat" };
-
-  Object.entries(dayMap).forEach(([beDay, feDay]) => {
-    if (backendSchedule[beDay]) {
-      Object.entries(backendSchedule[beDay]).forEach(([slot, room]) => {
-        if (fe[slot] && room && room !== "false" && room !== false) {
-          fe[slot][feDay] = room;
-        }
-      });
-    }
-  });
-
-  return fe;
-};
-
 const ProfessorSchedule = () => {
-  const [schedule, setSchedule] = useState(mapBackendToFrontend(null));
+  const [schedule, setSchedule] = useState({});
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [currentWeek, setCurrentWeek] = useState(null);
   const [rooms, setRooms] = useState([]);
+  const [slots, setSlots] = useState([]);
 
   // Confirm Modal State
   const [confirmModal, setConfirmModal] = useState({
@@ -47,39 +21,51 @@ const ProfessorSchedule = () => {
   });
 
   useEffect(() => {
-    fetchSchedule();
-    fetchCurrentWeek();
-    fetchRooms();
+    fetchInitialData();
   }, []);
 
-  const fetchSchedule = async () => {
+  const fetchInitialData = async () => {
+    setLoading(true);
     try {
-      const response = await api.get('/users/schedule');
-      setSchedule(mapBackendToFrontend(response.data));
-    } catch (error) {
-      console.error("Failed to fetch schedule:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const [schedRes, weekRes, roomRes, sessRes] = await Promise.all([
+        api.get('/users/schedule'),
+        api.get('/weeks'),
+        api.get('/rooms'),
+        api.get('/sessions')
+      ]);
 
-  const fetchRooms = async () => {
-    try {
-      const response = await api.get('/rooms');
-      setRooms(response.data);
-    } catch (error) {
-      console.error("Failed to fetch rooms:", error);
-    }
-  };
+      const fetchedSlots = sessRes.data.map(s => ({
+        name: s.name,
+        time: `${s.startTime}-${s.endTime}`
+      }));
+      setSlots(fetchedSlots);
+      
+      // Initialize schedule with empty strings for all slots
+      const initialSched = {};
+      fetchedSlots.forEach(s => {
+        initialSched[s.name] = { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" };
+      });
 
-  const fetchCurrentWeek = async () => {
-    try {
-      const response = await api.get('/weeks');
+      // Fill with backend data
+      const dayMap = { monday: "Mon", tuesday: "Tue", wednesday: "Wed", thursday: "Thu", friday: "Fri", saturday: "Sat" };
+      Object.entries(dayMap).forEach(([beDay, feDay]) => {
+        if (schedRes.data[beDay]) {
+          Object.entries(schedRes.data[beDay]).forEach(([slot, room]) => {
+            if (initialSched[slot] && room && room !== "false" && room !== false) {
+              initialSched[slot][feDay] = room;
+            }
+          });
+        }
+      });
+
+      setSchedule(initialSched);
+      setRooms(roomRes.data);
+
+      // Handle current week
       const today = new Date();
       today.setHours(0,0,0,0);
       const todayTime = today.getTime();
-
-      const match = response.data.find(w => {
+      const match = weekRes.data.find(w => {
         const start = new Date(w.weekStart).getTime();
         const end = start + 7 * 24 * 60 * 60 * 1000;
         return todayTime >= start && todayTime < end;
@@ -94,18 +80,11 @@ const ProfessorSchedule = () => {
         });
       }
     } catch (error) {
-      console.error("Failed to fetch weeks:", error);
+      console.error("Failed to fetch schedule data:", error);
+    } finally {
+      setLoading(false);
     }
   };
-
-  const slots = [
-    { name: "S1", time: "08:00-09:30" },
-    { name: "S2", time: "10:00-11:30" },
-    { name: "S3", time: "11:30-13:00" },
-    { name: "S4", time: "14:00-15:30" },
-    { name: "S5", time: "15:30-17:00" },
-    { name: "S6", time: "17:00-18:30" },
-  ];
 
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const beDayMap = { Mon: "monday", Tue: "tuesday", Wed: "wednesday", Thu: "thursday", Fri: "friday", Sat: "saturday" };

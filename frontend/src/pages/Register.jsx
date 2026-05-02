@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { UserPlus, Mail, Lock, User, Monitor, AlertCircle, ChevronDown } from 'lucide-react';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const Register = () => {
   const [fullName, setFullName] = useState('');
@@ -11,6 +13,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -22,7 +25,7 @@ const Register = () => {
       const user = await register(fullName, email, password, role);
       navigate(user.role === 'ADMIN' ? '/admin/dashboard' : '/professor/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || t('auth.registerFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -36,14 +39,18 @@ const Register = () => {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary-600/10 rounded-full blur-3xl"></div>
       </div>
 
+      <div className="absolute top-6 right-6 z-10">
+        <LanguageSwitcher />
+      </div>
+
       <div className="w-full max-w-md relative">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-primary-500 rounded-2xl shadow-lg shadow-primary-500/30 mb-4">
             <Monitor className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Create Account</h1>
-          <p className="text-gray-400 mt-1 text-sm">Join DataShow Reservation</p>
+          <h1 className="text-2xl font-bold text-white">{t('auth.registerTitle')}</h1>
+          <p className="text-gray-400 mt-1 text-sm">{t('auth.registerSubtitle')}</p>
         </div>
 
         {/* Card */}
@@ -58,7 +65,7 @@ const Register = () => {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Full Name
+                {t('auth.fullName')}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400" />
@@ -67,7 +74,7 @@ const Register = () => {
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="John Doe"
+                  placeholder="Jean Dupont"
                   required
                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all placeholder-gray-400"
                 />
@@ -76,7 +83,7 @@ const Register = () => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Email Address
+                {t('auth.email')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400" />
@@ -85,7 +92,7 @@ const Register = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@university.edu"
+                  placeholder="vous@universite.edu"
                   required
                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all placeholder-gray-400"
                 />
@@ -94,7 +101,7 @@ const Register = () => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400" />
@@ -103,7 +110,7 @@ const Register = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 6 characters"
+                  placeholder={t('auth.passwordPlaceholder')}
                   required
                   minLength={6}
                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all placeholder-gray-400"
@@ -113,7 +120,7 @@ const Register = () => {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Role
+                {t('auth.role')}
               </label>
               <div className="relative">
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400 pointer-events-none" />
@@ -123,8 +130,8 @@ const Register = () => {
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer"
                 >
-                  <option value="PROFESSOR">Professor</option>
-                  <option value="ADMIN">Administrator</option>
+                  <option value="PROFESSOR">{t('auth.profRole')}</option>
+                  <option value="ADMIN">{t('auth.adminRole')}</option>
                 </select>
               </div>
             </div>
@@ -140,7 +147,7 @@ const Register = () => {
               ) : (
                 <>
                   <UserPlus className="w-4 h-4" />
-                  Create Account
+                  {t('auth.registerBtn')}
                 </>
               )}
             </button>
@@ -148,9 +155,9 @@ const Register = () => {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
-              Already have an account?{' '}
+              {t('auth.alreadyAccount')} {' '}
               <Link to="/login" className="text-primary-600 hover:text-primary-700 font-semibold transition-colors">
-                Sign in
+                {t('auth.loginLink')}
               </Link>
             </p>
           </div>

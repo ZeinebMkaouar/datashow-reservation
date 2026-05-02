@@ -2,28 +2,24 @@ import { useState, useEffect } from "react";
 import { ClipboardList, Search, Download, X } from "lucide-react";
 import api from "../../services/api";
 import ConfirmModal from "../../components/ConfirmModal";
+import { useTranslation } from "react-i18next";
 
 const ProfessorReservations = () => {
+  const { t, i18n } = useTranslation();
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [roomFilter, setRoomFilter] = useState("All Rooms");
 
-  // Confirm Modal State
   const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    type: "info",
-    onConfirm: null,
+    isOpen: false, title: "", message: "", type: "info", onConfirm: null,
   });
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchReservations();
     }, 500);
-
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, statusFilter]);
 
@@ -41,8 +37,8 @@ const ProfessorReservations = () => {
   const handleCancel = (id) => {
     setConfirmModal({
       isOpen: true,
-      title: "Cancel Reservation",
-      message: "Are you sure you want to cancel this reservation? This action cannot be undone.",
+      title: t('profReservations.cancelTitle'),
+      message: t('profReservations.cancelMsg'),
       type: "danger",
       onConfirm: () => performCancel(id),
     });
@@ -55,16 +51,16 @@ const ProfessorReservations = () => {
       fetchReservations();
       setConfirmModal({
         isOpen: true,
-        title: "Cancelled",
-        message: "Your reservation has been cancelled.",
+        title: t('profReservations.cancelledTitle'),
+        message: t('profReservations.cancelledMsg'),
         type: "success",
       });
     } catch (error) {
       console.error("Failed to cancel reservation:", error);
       setConfirmModal({
         isOpen: true,
-        title: "Error",
-        message: "Failed to cancel reservation.",
+        title: t('common.error'),
+        message: t('profReservations.cancelFailed'),
         type: "error",
       });
     }
@@ -75,14 +71,14 @@ const ProfessorReservations = () => {
   const filtered = reservations.filter((res) => {
     const matchesRoom = roomFilter === "All Rooms" || res.salle === roomFilter;
     return matchesRoom;
-  }); // Room filter remains frontend for now
+  });
 
   const exportCSV = () => {
     const header = "Date,Slot,Room,DataShow,Type,Status\n";
     const rows = filtered
       .map(
         (res) =>
-          `${new Date(res.date).toLocaleDateString()},${res.seance},${res.salle},${res.datashow?.numero || 'Unknown'},${res.type},${res.status}`,
+          `${new Date(res.date).toLocaleDateString()},${res.seance},${res.salle},${res.datashow?.numero || t('profReservations.unknown')},${res.type},${res.status}`,
       )
       .join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
@@ -95,7 +91,7 @@ const ProfessorReservations = () => {
   };
 
   if (loading) {
-    return <div className="text-center py-10 text-muted-foreground">Loading reservations...</div>;
+    return <div className="text-center py-10 text-muted-foreground">{t('profReservations.loading')}</div>;
   }
 
   return (
@@ -105,60 +101,60 @@ const ProfessorReservations = () => {
         onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
       />
 
-      {/* Header */}
       <div>
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
-            <ClipboardList className="w-8 h-8 text-primary" />
-            My Reservations
-          </h1>
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
+              <ClipboardList className="w-8 h-8 text-primary" />
+              {t('profReservations.title')}
+            </h1>
+            <p className="text-muted-foreground text-sm lg:text-base mt-2">
+              {t('profReservations.subtitle')}
+            </p>
+          </div>
           <button 
             onClick={exportCSV}
             className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
           >
             <Download className="w-4 h-4" />
-            <span className="text-sm font-medium">Export CSV</span>
+            <span className="text-sm font-medium">{t('profReservations.exportCSV')}</span>
           </button>
         </div>
         <p className="text-muted-foreground text-sm mt-2">
-          {filtered.length} reservations found
+          {t('profReservations.found', { count: filtered.length })}
         </p>
       </div>
 
-      {/* Filters */}
       <div className="bg-card rounded-xl card-shadow p-4 lg:p-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by room, DataShow..."
+              placeholder={t('profReservations.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
             />
           </div>
 
-          {/* Status Filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+            className="rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           >
-            <option value="All Status">All Status</option>
-            <option value="confirmed">confirmed</option>
-            <option value="completed">completed</option>
-            <option value="cancelled">cancelled</option>
+            <option value="All Status">{t('common.allStatus')}</option>
+            <option value="confirmed">{t('common.confirmed')}</option>
+            <option value="completed">{t('common.completed')}</option>
+            <option value="cancelled">{t('common.cancelled')}</option>
           </select>
 
-          {/* Room Filter */}
           <select
             value={roomFilter}
             onChange={(e) => setRoomFilter(e.target.value)}
             className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
           >
-            <option value="All Rooms">All Rooms</option>
+            <option value="All Rooms">{t('profReservations.allRooms')}</option>
             {rooms.map(r => (
               <option key={r} value={r}>{r}</option>
             ))}
@@ -166,11 +162,10 @@ const ProfessorReservations = () => {
         </div>
       </div>
 
-      {/* Reservations List */}
       <div className="space-y-3">
         {filtered.length === 0 && (
           <div className="text-center py-10 bg-card rounded-xl border border-border text-muted-foreground">
-            No reservations match your criteria.
+            {t('profReservations.noMatch')}
           </div>
         )}
         {filtered.map((res) => (
@@ -180,13 +175,13 @@ const ProfessorReservations = () => {
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground">{new Date(res.date).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="font-semibold text-foreground">{new Date(res.date).toLocaleDateString(i18n.language, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Slot {res.seance} · Room {res.salle}
+                  {t('common.slot')} {res.seance} · {t('common.room')} {res.salle}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-sm text-muted-foreground">
-                    DataShow: {res.datashow?.numero || 'Unknown'}
+                    DataShow: {res.datashow?.numero || t('profReservations.unknown')}
                   </span>
                   <span
                     className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full ${
@@ -197,7 +192,7 @@ const ProfessorReservations = () => {
                         : "bg-success/20 text-success"
                     }`}
                   >
-                    {res.status}
+                    {res.status === 'confirmed' ? t('common.confirmed') : res.status === 'cancelled' ? t('common.cancelled') : t('common.completed')}
                   </span>
                   <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-muted text-muted-foreground">
                     {res.type}
@@ -210,7 +205,7 @@ const ProfessorReservations = () => {
                   className="px-4 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors font-medium text-sm flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-destructive/20"
                 >
                   <X className="w-4 h-4" />
-                  Cancel
+                  {t('profReservations.cancelBtn')}
                 </button>
               )}
             </div>

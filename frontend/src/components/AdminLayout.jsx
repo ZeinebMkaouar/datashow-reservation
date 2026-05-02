@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import {
   LayoutDashboard,
   Package,
@@ -16,20 +17,22 @@ import {
   ClipboardList,
   Clock,
 } from "lucide-react";
+import LanguageSwitcher from "./LanguageSwitcher";
 
-const navItems = [
-  { title: "Overview", url: "/admin/overview", icon: LayoutDashboard },
-  { title: "Inventory", url: "/admin/inventory", icon: Package },
-  { title: "All Reservations", url: "/admin/reservations", icon: ClipboardList },
-  { title: "Room Management", url: "/admin/rooms", icon: DoorOpen },
-  { title: "Maintenance Logs", url: "/admin/maintenance", icon: Wrench },
-  { title: "Claims", url: "/admin/claims", icon: MessageSquare },
-  { title: "Week Management", url: "/admin/weeks", icon: Settings },
-  { title: "Session Times", url: "/admin/sessions", icon: Clock },
+const navItemsConfig = [
+  { key: "nav.dashboard", url: "/admin/overview", icon: LayoutDashboard },
+  { key: "nav.inventory", url: "/admin/inventory", icon: Package },
+  { key: "nav.reservations", url: "/admin/reservations", icon: ClipboardList },
+  { key: "nav.rooms", url: "/admin/rooms", icon: DoorOpen },
+  { key: "nav.maintenance", url: "/admin/maintenance", icon: Wrench },
+  { key: "nav.claims", url: "/admin/claims", icon: MessageSquare },
+  { key: "nav.weeks", url: "/admin/weeks", icon: Settings },
+  { key: "nav.sessions", url: "/admin/sessions", icon: Clock },
 ];
 
 const AdminLayout = () => {
   const { user, logout } = useAuth();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -64,11 +67,12 @@ const AdminLayout = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1 overflow-x-hidden">
-          {navItems.map((item) => {
+          {navItemsConfig.map((item) => {
             const Icon = item.icon;
+            const title = t(item.key);
             return (
               <NavLink
-                key={item.title}
+                key={item.url}
                 to={item.url}
                 end
                 onClick={() => setMobileMenuOpen(false)}
@@ -79,11 +83,11 @@ const AdminLayout = () => {
                       : "text-white/70 hover:bg-white/5 hover:text-white"
                   } ${collapsed ? "lg:justify-center" : ""}`
                 }
-                title={collapsed ? item.title : ""}
+                title={collapsed ? title : ""}
               >
                 <Icon className="w-[18px] h-[18px] flex-shrink-0" />
                 <span className={`transition-all duration-300 ${collapsed ? "lg:opacity-0 lg:w-0 lg:ml-0" : "opacity-100 ml-3"} overflow-hidden whitespace-nowrap`}>
-                  {item.title}
+                  {title}
                 </span>
               </NavLink>
             );
@@ -94,11 +98,11 @@ const AdminLayout = () => {
           <button
             onClick={handleLogout}
             className={`flex items-center w-full rounded-lg px-3 py-2 text-white/70 hover:bg-white/5 hover:text-white transition-all duration-300 cursor-pointer ${collapsed ? "lg:justify-center" : ""}`}
-            title={collapsed ? "Sign Out" : ""}
+            title={collapsed ? t("nav.logout") : ""}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
             <span className={`transition-all duration-300 ${collapsed ? "lg:opacity-0 lg:w-0 lg:ml-0" : "opacity-100 ml-3"} overflow-hidden whitespace-nowrap`}>
-              Sign Out
+              {t("nav.logout")}
             </span>
           </button>
         </div>
@@ -121,10 +125,11 @@ const AdminLayout = () => {
             >
               <PanelLeft className={`w-5 h-5 transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`} />
             </button>
-            <span className="text-sm font-medium text-gray-500">Admin Portal</span>
+            <span className="text-sm font-medium text-gray-500">{t("nav.adminPortal")}</span>
           </div>
           
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <button className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors cursor-pointer">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold border border-white">
@@ -136,7 +141,7 @@ const AdminLayout = () => {
                 {user?.fullName}
               </span>
               <span className="text-xs text-gray-500">
-                Administrator
+                {t('auth.adminRole')}
               </span>
             </div>
             <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">

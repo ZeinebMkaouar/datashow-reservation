@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { Calendar, Info } from "lucide-react";
 import api from "../../services/api";
 import ConfirmModal from "../../components/ConfirmModal";
+import { useTranslation } from "react-i18next";
 
 const ProfessorSchedule = () => {
+  const { t, i18n } = useTranslation();
   const [schedule, setSchedule] = useState({});
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -11,13 +13,8 @@ const ProfessorSchedule = () => {
   const [rooms, setRooms] = useState([]);
   const [slots, setSlots] = useState([]);
 
-  // Confirm Modal State
   const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    type: "info",
-    onConfirm: null,
+    isOpen: false, title: "", message: "", type: "info", onConfirm: null,
   });
 
   useEffect(() => {
@@ -40,14 +37,12 @@ const ProfessorSchedule = () => {
       }));
       setSlots(fetchedSlots);
       
-      // Initialize schedule with empty strings for all slots
       const initialSched = {};
       fetchedSlots.forEach(s => {
-        initialSched[s.name] = { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" };
+        initialSched[s.name] = { Lun: "", Mar: "", Mer: "", Jeu: "", Ven: "", Sam: "" };
       });
 
-      // Fill with backend data
-      const dayMap = { monday: "Mon", tuesday: "Tue", wednesday: "Wed", thursday: "Thu", friday: "Fri", saturday: "Sat" };
+      const dayMap = { monday: "Lun", tuesday: "Mar", wednesday: "Mer", thursday: "Jeu", friday: "Ven", saturday: "Sam" };
       Object.entries(dayMap).forEach(([beDay, feDay]) => {
         if (schedRes.data[beDay]) {
           Object.entries(schedRes.data[beDay]).forEach(([slot, room]) => {
@@ -61,7 +56,6 @@ const ProfessorSchedule = () => {
       setSchedule(initialSched);
       setRooms(roomRes.data);
 
-      // Handle current week
       const today = new Date();
       today.setHours(0,0,0,0);
       const todayTime = today.getTime();
@@ -75,29 +69,28 @@ const ProfessorSchedule = () => {
         const startDate = new Date(match.weekStart);
         const endDate = new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000);
         setCurrentWeek({
-          label: `${startDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} – ${endDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+          label: `${startDate.toLocaleDateString(i18n.language, { day: '2-digit', month: 'short' })} – ${endDate.toLocaleDateString(i18n.language, { day: '2-digit', month: 'short', year: 'numeric' })}`,
           isOpen: match.isOpen
         });
       }
     } catch (error) {
-      console.error("Failed to fetch schedule data:", error);
+      console.error("Error fetching schedule data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const beDayMap = { Mon: "monday", Tue: "tuesday", Wed: "wednesday", Thu: "thursday", Fri: "friday", Sat: "saturday" };
+  const days = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  const dayTranslationKeys = { "Lun": "Mon", "Mar": "Tue", "Mer": "Wed", "Jeu": "Thu", "Ven": "Fri", "Sam": "Sat" };
+  const beDayMap = { Lun: "monday", Mar: "tuesday", Mer: "wednesday", Jeu: "thursday", Ven: "friday", Sam: "saturday" };
 
-  // Highlight today's column
   const todayIndex = new Date().getDay();
-  const todayDayMap = { 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat" };
+  const todayDayMap = { 1: "Lun", 2: "Mar", 3: "Mer", 4: "Jeu", 5: "Ven", 6: "Sam" };
   const todayDay = todayDayMap[todayIndex] || null;
 
   const handleSelectRoom = async (slot, day, roomName) => {
     const beDay = beDayMap[day];
 
-    // Optimistic UI update
     setSchedule((prev) => ({
       ...prev,
       [slot]: { ...prev[slot], [day]: roomName },
@@ -112,16 +105,16 @@ const ProfessorSchedule = () => {
       console.error("Failed to update schedule:", error);
       setConfirmModal({
         isOpen: true,
-        title: "Error",
-        message: "Failed to update schedule.",
+        title: t('common.error'),
+        message: t('profSchedule.errorUpdate'),
         type: "error",
       });
-      fetchSchedule();
+      fetchInitialData();
     }
   };
 
   if (loading) {
-    return <div className="text-center py-10 text-muted-foreground">Loading schedule...</div>;
+    return <div className="text-center py-10 text-muted-foreground">{t('profSchedule.loading')}</div>;
   }
 
   return (
@@ -131,51 +124,48 @@ const ProfessorSchedule = () => {
         onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
       />
       
-      {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
             <Calendar className="w-8 h-8 text-primary" />
-            My Schedule
+            {t('profSchedule.title')}
           </h1>
           <p className="text-muted-foreground text-sm lg:text-base mt-2">
-            Click an empty slot to assign a room from the list. Click an assigned room to change or remove it.
+            {t('profSchedule.subtitle')}
           </p>
         </div>
         {currentWeek && (
           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border ${currentWeek.isOpen ? 'bg-success/10 border-success/30 text-success' : 'bg-destructive/10 border-destructive/30 text-destructive'}`}>
             <Calendar className="w-4 h-4" />
-            Current week: {currentWeek.label}
+            {t('common.currentWeek')} : {currentWeek.label}
             <span className={`ml-1 px-2 py-0.5 rounded-md text-xs font-bold ${currentWeek.isOpen ? 'bg-success/20' : 'bg-destructive/20'}`}>
-              {currentWeek.isOpen ? "OPEN" : "CLOSED"}
+              {currentWeek.isOpen ? t('common.open') : t('common.closed')}
             </span>
           </div>
         )}
       </div>
 
-      {/* Info box */}
       <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm flex items-start gap-3">
         <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
         <span className="text-muted-foreground">
-          Your schedule is used for <strong className="text-foreground">Fast Booking</strong>. When you book a DataShow, the system automatically detects your room and slot from this table. Rooms are managed by the administration.
+          {t('profSchedule.info')}
         </span>
       </div>
 
-      {/* Table */}
       <div className="bg-card rounded-xl card-shadow overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border">
               <th className="px-4 lg:px-6 py-3 text-left text-sm font-semibold text-muted-foreground">
-                Slot
+                {t('common.slot')}
               </th>
               {days.map((day) => (
                 <th
                   key={day}
                   className={`px-4 lg:px-6 py-3 text-center text-sm font-semibold ${day === todayDay ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
                 >
-                  {day}
-                  {day === todayDay && <span className="block text-[10px] font-normal text-primary/70">Today</span>}
+                  {t(`profSchedule.days.${dayTranslationKeys[day]}`)}
+                  {day === todayDay && <span className="block text-[10px] font-normal text-primary/70">{t('common.today')}</span>}
                 </th>
               ))}
             </tr>
@@ -204,10 +194,10 @@ const ProfessorSchedule = () => {
                           onBlur={() => setEditing(null)}
                           className="w-full min-w-[100px] px-2 py-1 text-sm border border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background text-foreground text-center"
                         >
-                          <option value="">— None —</option>
+                          <option value="">{t('common.none')}</option>
                           {rooms.map((room) => (
                             <option key={room._id} value={room.name}>
-                              {room.name} (Bât. {room.building}){room.hasEquipment ? ' ✓ Equipped' : ''}
+                              {room.name} ({t('common.building')} {room.building}){room.hasEquipment ? ` ✓ ${t('common.equipped')}` : ''}
                             </option>
                           ))}
                         </select>

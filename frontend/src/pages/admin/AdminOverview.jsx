@@ -22,6 +22,7 @@ import {
   Legend,
 } from "recharts";
 import api from "../../services/api";
+import { useTranslation } from "react-i18next";
 
 const AdminOverview = () => {
   const [data, setData] = useState({
@@ -31,6 +32,7 @@ const AdminOverview = () => {
     claims: [],
   });
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchDashboardData();
@@ -61,72 +63,76 @@ const AdminOverview = () => {
 
   const availableDs = datashows.filter(d => d.etat === 'disponible').length;
   const inRepairDs = datashows.filter(d => d.etat === 'en_panne').length;
-  
+
   const statusDistribution = [
-    { name: "Available", value: availableDs, color: "var(--color-success)" },
-    { name: "In Repair", value: inRepairDs, color: "var(--color-destructive)" },
+    { name: t('adminDashboard.available'), value: availableDs, color: "var(--color-success)" },
+    { name: t('adminDashboard.inRepair'), value: inRepairDs, color: "var(--color-destructive)" },
   ];
 
   const activeBookings = reservations.filter(r => r.status === 'confirmed').length;
 
   const stats = [
     {
-      label: "Total DataShows",
+      label: t('adminDashboard.totalDs'),
       value: datashows.length.toString(),
       icon: Package,
       color: "text-primary",
-      trend: "Total Fleet",
+      trend: t('adminDashboard.totalFleet'),
     },
     {
-      label: "Available",
+      label: t('adminDashboard.available'),
       value: availableDs.toString(),
       icon: CheckCircle,
       color: "text-success",
-      trend: `${datashows.length > 0 ? Math.round((availableDs/datashows.length)*100) : 0}% of fleet`,
+      trend: t('adminDashboard.fleetPercent', { percent: datashows.length > 0 ? Math.round((availableDs / datashows.length) * 100) : 0 }),
     },
     {
-      label: "In Repair",
+      label: t('adminDashboard.inRepair'),
       value: inRepairDs.toString(),
       icon: AlertTriangle,
       color: "text-warning",
-      trend: "Currently down",
+      trend: t('adminDashboard.outOfService'),
     },
     {
-      label: "Active Bookings",
+      label: t('adminDashboard.activeBookings'),
       value: activeBookings.toString(),
       icon: Users,
       color: "text-secondary",
-      trend: "System wide",
+      trend: t('adminDashboard.systemWide'),
     },
   ];
 
   // Calculate bookings by day based on reservations
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const bookingsCount = { 'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0, 'Sun': 0 };
+  const daysOfWeek = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  const bookingsCount = { 'Lun': 0, 'Mar': 0, 'Mer': 0, 'Jeu': 0, 'Ven': 0, 'Sam': 0, 'Dim': 0 };
   reservations.forEach(r => {
     const day = daysOfWeek[new Date(r.date).getDay()];
     if (bookingsCount[day] !== undefined) {
       bookingsCount[day]++;
     }
   });
-  const bookingsByDay = Object.keys(bookingsCount).filter(k => k !== 'Sun').map(day => ({ day, bookings: bookingsCount[day] }));
+  const bookingsByDay = Object.keys(bookingsCount).filter(k => k !== 'Dim').map(day => {
+    const keyIndex = daysOfWeek.indexOf(day);
+    return { day: t(`adminDashboard.days.${dayKeys[keyIndex]}`), bookings: bookingsCount[day] }
+  });
 
   // Recent Activity
   const recentActivities = [
     ...reservations.map(r => ({
-      action: `${r.datashow?.numero || 'A datashow'} booked by Prof`,
+      action: t('adminDashboard.bookingAction', { ds: r.datashow?.numero || t('datashow') }),
       time: new Date(r.createdAt || r.date).getTime(),
       displayTime: new Date(r.createdAt || r.date).toLocaleDateString(),
       type: "booking",
     })),
     ...repairs.map(r => ({
-      action: `${r.datashow?.numero || 'A datashow'} marked for repair`,
+      action: t('adminDashboard.repairAction', { ds: r.datashow?.numero || t('datashow') }),
       time: new Date(r.createdAt || r.date).getTime(),
       displayTime: new Date(r.createdAt || r.date).toLocaleDateString(),
       type: "repair",
     })),
     ...claims.map(c => ({
-      action: `Claim for DataShow ${c.datashowId} submitted`,
+      action: t('adminDashboard.claimAction', { dsId: c.datashowId }),
       time: new Date(c.createdAt).getTime(),
       displayTime: new Date(c.createdAt).toLocaleDateString(),
       type: "claim",
@@ -137,25 +143,25 @@ const AdminOverview = () => {
   const getWeeklyTrend = () => {
     const trend = [];
     const now = new Date();
-    
+
     for (let i = 3; i >= 0; i--) {
       const start = new Date(now);
       start.setDate(now.getDate() - (i * 7 + 7));
       const end = new Date(now);
       end.setDate(now.getDate() - (i * 7));
-      
+
       const resCount = reservations.filter(r => {
         const d = new Date(r.date);
         return d >= start && d < end;
       }).length;
-      
+
       const claimCount = claims.filter(c => {
         const d = new Date(c.createdAt);
         return d >= start && d < end;
       }).length;
-      
+
       trend.push({
-        week: i === 0 ? "Current" : `W-${i}`,
+        week: i === 0 ? t('adminDashboard.currentWeek') : `${t('adminDashboard.weekPrefix')}${i}`,
         reservations: resCount,
         claims: claimCount
       });
@@ -166,14 +172,14 @@ const AdminOverview = () => {
   const weeklyTrend = getWeeklyTrend();
 
   if (loading) {
-    return <div className="text-center py-10 text-muted-foreground">Loading overview...</div>;
+    return <div className="text-center py-10 text-muted-foreground">{t('adminDashboard.loading')}</div>;
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Admin Overview</h1>
-        <p className="text-muted-foreground">System status and analytics.</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('adminDashboard.title')}</h1>
+        <p className="text-muted-foreground">{t('adminDashboard.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -204,10 +210,10 @@ const AdminOverview = () => {
         <section className="bg-card rounded-3xl p-6 shadow-sm border border-border">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-foreground">
-              Bookings by Day
+              {t('adminDashboard.resByDay')}
             </h2>
             <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Live
+              {t('adminDashboard.live')}
             </span>
           </div>
           <div className="h-[220px]">
@@ -232,6 +238,7 @@ const AdminOverview = () => {
                   }}
                 />
                 <Bar
+                  name={t('nav.reservations')}
                   dataKey="bookings"
                   fill="var(--color-primary)"
                   radius={[4, 4, 0, 0]}
@@ -244,10 +251,10 @@ const AdminOverview = () => {
         <section className="bg-card rounded-3xl p-6 shadow-sm border border-border">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-foreground">
-              Fleet Status
+              {t('adminDashboard.fleetState')}
             </h2>
             <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Updated
+              {t('adminDashboard.updated')}
             </span>
           </div>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
@@ -304,10 +311,10 @@ const AdminOverview = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
           <div>
             <h2 className="text-lg font-semibold text-foreground">
-              Weekly Trends
+              {t('adminDashboard.weeklyTrends')}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Reservations and claims overview.
+              {t('adminDashboard.trendsDesc')}
             </p>
           </div>
         </div>
@@ -334,6 +341,7 @@ const AdminOverview = () => {
               <Legend />
               <Line
                 type="monotone"
+                name={t('nav.reservations')}
                 dataKey="reservations"
                 stroke="var(--color-primary)"
                 strokeWidth={2}
@@ -341,6 +349,7 @@ const AdminOverview = () => {
               />
               <Line
                 type="monotone"
+                name={t('nav.claims')}
                 dataKey="claims"
                 stroke="var(--color-destructive)"
                 strokeWidth={2}
@@ -354,12 +363,12 @@ const AdminOverview = () => {
       <section className="bg-card rounded-3xl shadow-sm border border-border">
         <div className="p-5 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">
-            Recent Activity
+            {t('adminDashboard.recentActivity')}
           </h2>
         </div>
         <div className="divide-y divide-border">
           {recentActivities.length === 0 && (
-            <div className="p-4 text-center text-muted-foreground">No recent activity.</div>
+            <div className="p-4 text-center text-muted-foreground">{t('adminDashboard.noRecent')}</div>
           )}
           {recentActivities.map((item, index) => (
             <div
@@ -368,13 +377,12 @@ const AdminOverview = () => {
             >
               <div className="flex items-center gap-3">
                 <span
-                  className={`w-2 h-2 rounded-full ${
-                    item.type === "booking"
+                  className={`w-2 h-2 rounded-full ${item.type === "booking"
                       ? "bg-primary"
                       : item.type === "claim"
-                      ? "bg-destructive"
-                      : "bg-warning"
-                  }`}
+                        ? "bg-destructive"
+                        : "bg-warning"
+                    }`}
                 />
                 <span className="text-sm text-foreground">{item.action}</span>
               </div>

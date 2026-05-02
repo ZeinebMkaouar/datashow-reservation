@@ -1,18 +1,102 @@
-import { useState } from "react";
-import { Calendar } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, Info } from "lucide-react";
+import api from "../../services/api";
+import ConfirmModal from "../../components/ConfirmModal";
 
-const ProfessorSchedule = () => {
-  const [schedule, setSchedule] = useState({
-    S1: { Mon: "", Tue: "", Wed: "", Thu: "A-201", Fri: "", Sat: "" },
-    S2: { Mon: "A-201", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
-    S3: { Mon: "", Tue: "", Wed: "", Thu: "C-302", Fri: "", Sat: "" },
-    S4: { Mon: "", Tue: "B-103", Wed: "", Thu: "", Fri: "", Sat: "" },
+const mapBackendToFrontend = (backendSchedule) => {
+  const fe = {
+    S1: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
+    S2: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
+    S3: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
+    S4: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
     S5: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
     S6: { Mon: "", Tue: "", Wed: "", Thu: "", Fri: "", Sat: "" },
+  };
+
+  if (!backendSchedule) return fe;
+
+  const dayMap = { monday: "Mon", tuesday: "Tue", wednesday: "Wed", thursday: "Thu", friday: "Fri", saturday: "Sat" };
+
+  Object.entries(dayMap).forEach(([beDay, feDay]) => {
+    if (backendSchedule[beDay]) {
+      Object.entries(backendSchedule[beDay]).forEach(([slot, room]) => {
+        if (fe[slot] && room && room !== "false" && room !== false) {
+          fe[slot][feDay] = room;
+        }
+      });
+    }
   });
 
-  const [editing, setEditing] = useState(null); // { slot: 'S1', day: 'Mon' }
-  const [roomInput, setRoomInput] = useState("");
+  return fe;
+};
+
+const ProfessorSchedule = () => {
+  const [schedule, setSchedule] = useState(mapBackendToFrontend(null));
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null);
+  const [currentWeek, setCurrentWeek] = useState(null);
+  const [rooms, setRooms] = useState([]);
+
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info",
+    onConfirm: null,
+  });
+
+  useEffect(() => {
+    fetchSchedule();
+    fetchCurrentWeek();
+    fetchRooms();
+  }, []);
+
+  const fetchSchedule = async () => {
+    try {
+      const response = await api.get('/users/schedule');
+      setSchedule(mapBackendToFrontend(response.data));
+    } catch (error) {
+      console.error("Failed to fetch schedule:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRooms = async () => {
+    try {
+      const response = await api.get('/rooms');
+      setRooms(response.data);
+    } catch (error) {
+      console.error("Failed to fetch rooms:", error);
+    }
+  };
+
+  const fetchCurrentWeek = async () => {
+    try {
+      const response = await api.get('/weeks');
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const todayTime = today.getTime();
+
+      const match = response.data.find(w => {
+        const start = new Date(w.weekStart).getTime();
+        const end = start + 7 * 24 * 60 * 60 * 1000;
+        return todayTime >= start && todayTime < end;
+      });
+
+      if (match) {
+        const startDate = new Date(match.weekStart);
+        const endDate = new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000);
+        setCurrentWeek({
+          label: `${startDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} – ${endDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`,
+          isOpen: match.isOpen
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch weeks:", error);
+    }
+  };
 
   const slots = [
     { name: "S1", time: "08:00-09:30" },
@@ -24,36 +108,78 @@ const ProfessorSchedule = () => {
   ];
 
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const beDayMap = { Mon: "monday", Tue: "tuesday", Wed: "wednesday", Thu: "thursday", Fri: "friday", Sat: "saturday" };
 
-  const handleSaveRoom = (slot, day) => {
-    if (roomInput.trim() !== "") {
-      setSchedule({
-        ...schedule,
-        [slot]: { ...schedule[slot], [day]: roomInput.trim() },
-      });
-    }
+  // Highlight today's column
+  const todayIndex = new Date().getDay();
+  const todayDayMap = { 1: "Mon", 2: "Tue", 3: "Wed", 4: "Thu", 5: "Fri", 6: "Sat" };
+  const todayDay = todayDayMap[todayIndex] || null;
+
+  const handleSelectRoom = async (slot, day, roomName) => {
+    const beDay = beDayMap[day];
+
+    // Optimistic UI update
+    setSchedule((prev) => ({
+      ...prev,
+      [slot]: { ...prev[slot], [day]: roomName },
+    }));
     setEditing(null);
-  };
 
-  const handleKeyDown = (e, slot, day) => {
-    if (e.key === "Enter") {
-      handleSaveRoom(slot, day);
-    } else if (e.key === "Escape") {
-      setEditing(null);
+    try {
+      await api.put('/users/schedule', {
+        [beDay]: { [slot]: roomName }
+      });
+    } catch (error) {
+      console.error("Failed to update schedule:", error);
+      setConfirmModal({
+        isOpen: true,
+        title: "Error",
+        message: "Failed to update schedule.",
+        type: "error",
+      });
+      fetchSchedule();
     }
   };
+
+  if (loading) {
+    return <div className="text-center py-10 text-muted-foreground">Loading schedule...</div>;
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in relative">
+      <ConfirmModal
+        {...confirmModal}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+      />
+      
       {/* Header */}
-      <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
-          <Calendar className="w-8 h-8 text-primary" />
-          My Schedule
-        </h1>
-        <p className="text-muted-foreground text-sm lg:text-base mt-2">
-          Click an empty slot to assign a room.
-        </p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
+            <Calendar className="w-8 h-8 text-primary" />
+            My Schedule
+          </h1>
+          <p className="text-muted-foreground text-sm lg:text-base mt-2">
+            Click an empty slot to assign a room from the list. Click an assigned room to change or remove it.
+          </p>
+        </div>
+        {currentWeek && (
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border ${currentWeek.isOpen ? 'bg-success/10 border-success/30 text-success' : 'bg-destructive/10 border-destructive/30 text-destructive'}`}>
+            <Calendar className="w-4 h-4" />
+            Current week: {currentWeek.label}
+            <span className={`ml-1 px-2 py-0.5 rounded-md text-xs font-bold ${currentWeek.isOpen ? 'bg-success/20' : 'bg-destructive/20'}`}>
+              {currentWeek.isOpen ? "OPEN" : "CLOSED"}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Info box */}
+      <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm flex items-start gap-3">
+        <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+        <span className="text-muted-foreground">
+          Your schedule is used for <strong className="text-foreground">Fast Booking</strong>. When you book a DataShow, the system automatically detects your room and slot from this table. Rooms are managed by the administration.
+        </span>
       </div>
 
       {/* Table */}
@@ -67,50 +193,55 @@ const ProfessorSchedule = () => {
               {days.map((day) => (
                 <th
                   key={day}
-                  className="px-4 lg:px-6 py-3 text-center text-sm font-semibold text-muted-foreground"
+                  className={`px-4 lg:px-6 py-3 text-center text-sm font-semibold ${day === todayDay ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
                 >
                   {day}
+                  {day === todayDay && <span className="block text-[10px] font-normal text-primary/70">Today</span>}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {slots.map((slot) => (
-              <tr
-                key={slot.name}
-                className="hover:bg-muted/50 transition-colors"
-              >
+              <tr key={slot.name} className="hover:bg-muted/50 transition-colors">
                 <td className="px-4 lg:px-6 py-3 text-sm font-medium text-foreground whitespace-nowrap">
                   {slot.name}{" "}
                   <span className="text-xs text-muted-foreground">({slot.time})</span>
                 </td>
                 {days.map((day) => {
                   const isEditing = editing?.slot === slot.name && editing?.day === day;
+                  const isToday = day === todayDay;
+                  const currentRoom = schedule[slot.name][day];
                   return (
                     <td
                       key={`${slot.name}-${day}`}
-                      className="px-4 lg:px-6 py-3 text-center"
+                      className={`px-4 lg:px-6 py-3 text-center ${isToday ? 'bg-primary/5' : ''}`}
                     >
                       {isEditing ? (
-                        <input
+                        <select
                           autoFocus
-                          value={roomInput}
-                          onChange={(e) => setRoomInput(e.target.value)}
-                          onBlur={() => handleSaveRoom(slot.name, day)}
-                          onKeyDown={(e) => handleKeyDown(e, slot.name, day)}
-                          placeholder="Room ID"
-                          className="w-full min-w-[80px] px-2 py-1 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background text-foreground text-center"
-                        />
-                      ) : schedule[slot.name][day] ? (
-                        <span className="inline-block px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-md">
-                          {schedule[slot.name][day]}
-                        </span>
+                          value={currentRoom || ""}
+                          onChange={(e) => handleSelectRoom(slot.name, day, e.target.value)}
+                          onBlur={() => setEditing(null)}
+                          className="w-full min-w-[100px] px-2 py-1 text-sm border border-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background text-foreground text-center"
+                        >
+                          <option value="">— None —</option>
+                          {rooms.map((room) => (
+                            <option key={room._id} value={room.name}>
+                              {room.name} (Bât. {room.building}){room.hasEquipment ? ' ✓ Equipped' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      ) : currentRoom ? (
+                        <button
+                          onClick={() => setEditing({ slot: slot.name, day })}
+                          className="inline-block px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-medium rounded-md transition-colors"
+                        >
+                          {currentRoom}
+                        </button>
                       ) : (
                         <button
-                          onClick={() => {
-                            setEditing({ slot: slot.name, day });
-                            setRoomInput("");
-                          }}
+                          onClick={() => setEditing({ slot: slot.name, day })}
                           className="inline-flex items-center justify-center w-full py-1.5 text-muted-foreground hover:bg-muted/50 rounded-md transition-colors text-xs font-medium border border-dashed border-border"
                         >
                           +

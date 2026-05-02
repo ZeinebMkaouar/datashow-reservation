@@ -1,75 +1,118 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ClipboardList, Search, Download, X } from "lucide-react";
+import api from "../../services/api";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const ProfessorReservations = () => {
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [roomFilter, setRoomFilter] = useState("All Rooms");
 
-  const reservations = [
-    {
-      id: 1,
-      date: "Monday, 2026-04-14",
-      slot: "Slot S2",
-      room: "Room A-201",
-      datashow: "DS-004",
-      status: "confirmed",
-    },
-    {
-      id: 2,
-      date: "Tuesday, 2026-04-15",
-      slot: "Slot S4",
-      room: "Room B-103",
-      datashow: "DS-007",
-      status: "confirmed",
-    },
-    {
-      id: 3,
-      date: "Thursday, 2026-04-17",
-      slot: "Slot S1",
-      room: "Room A-201",
-      datashow: "DS-004",
-      status: "confirmed",
-    },
-    {
-      id: 4,
-      date: "Thursday, 2026-04-17",
-      slot: "Slot S3",
-      room: "Room C-302",
-      datashow: "DS-012",
-      status: "confirmed",
-    },
-    {
-      id: 5,
-      date: "Thursday, 2026-04-10",
-      slot: "Slot S2",
-      room: "Room B-103",
-      datashow: "DS-002",
-      status: "completed",
-    },
-    {
-      id: 6,
-      date: "Tuesday, 2026-04-08",
-      slot: "Slot S5",
-      room: "Room A-201",
-      datashow: "DS-006",
-      status: "completed",
-    },
-  ];
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info",
+    onConfirm: null,
+  });
+
+  useEffect(() => {
+    fetchReservations();
+  }, []);
+
+  const fetchReservations = async () => {
+    try {
+      const response = await api.get('/reservations/my');
+      setReservations(response.data);
+    } catch (error) {
+      console.error("Failed to fetch reservations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Cancel Reservation",
+      message: "Are you sure you want to cancel this reservation? This action cannot be undone.",
+      type: "danger",
+      onConfirm: () => performCancel(id),
+    });
+  };
+
+  const performCancel = async (id) => {
+    setConfirmModal(prev => ({ ...prev, loading: true }));
+    try {
+      await api.put(`/reservations/${id}/cancel`);
+      fetchReservations();
+      setConfirmModal({
+        isOpen: true,
+        title: "Cancelled",
+        message: "Your reservation has been cancelled.",
+        type: "success",
+      });
+    } catch (error) {
+      console.error("Failed to cancel reservation:", error);
+      setConfirmModal({
+        isOpen: true,
+        title: "Error",
+        message: "Failed to cancel reservation.",
+        type: "error",
+      });
+    }
+  };
+
+  const rooms = [...new Set(reservations.map((res) => res.salle))].filter(Boolean);
 
   const filtered = reservations.filter((res) => {
+    const dsNum = res.datashow?.numero || "";
+    const rmName = res.salle || "";
+    
     const matchesSearch =
-      res.room.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      res.datashow.toLowerCase().includes(searchTerm.toLowerCase());
+      rmName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      dsNum.toLowerCase().includes(searchTerm.toLowerCase());
+      
     const matchesStatus =
       statusFilter === "All Status" || res.status === statusFilter;
+      
     const matchesRoom =
-      roomFilter === "All Rooms" || res.room.includes(roomFilter);
+      roomFilter === "All Rooms" || rmName === roomFilter;
+      
     return matchesSearch && matchesStatus && matchesRoom;
   });
 
+  const exportCSV = () => {
+    const header = "Date,Slot,Room,DataShow,Type,Status\n";
+    const rows = filtered
+      .map(
+        (res) =>
+          `${new Date(res.date).toLocaleDateString()},${res.seance},${res.salle},${res.datashow?.numero || 'Unknown'},${res.type},${res.status}`,
+      )
+      .join("\n");
+    const blob = new Blob([header + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "my_reservations.csv";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (loading) {
+    return <div className="text-center py-10 text-muted-foreground">Loading reservations...</div>;
+  }
+
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in relative">
+      <ConfirmModal
+        {...confirmModal}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+      />
+
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
@@ -77,7 +120,10 @@ const ProfessorReservations = () => {
             <ClipboardList className="w-8 h-8 text-primary" />
             My Reservations
           </h1>
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+          <button 
+            onClick={exportCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
+          >
             <Download className="w-4 h-4" />
             <span className="text-sm font-medium">Export CSV</span>
           </button>
@@ -95,7 +141,7 @@ const ProfessorReservations = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by room, DataShow, day..."
+              placeholder="Search by room, DataShow..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
@@ -108,9 +154,10 @@ const ProfessorReservations = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
           >
-            <option>All Status</option>
-            <option>confirmed</option>
-            <option>completed</option>
+            <option value="All Status">All Status</option>
+            <option value="confirmed">confirmed</option>
+            <option value="completed">completed</option>
+            <option value="cancelled">cancelled</option>
           </select>
 
           {/* Room Filter */}
@@ -119,44 +166,57 @@ const ProfessorReservations = () => {
             onChange={(e) => setRoomFilter(e.target.value)}
             className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
           >
-            <option>All Rooms</option>
-            <option>A-201</option>
-            <option>B-103</option>
-            <option>C-302</option>
+            <option value="All Rooms">All Rooms</option>
+            {rooms.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
           </select>
         </div>
       </div>
 
       {/* Reservations List */}
       <div className="space-y-3">
+        {filtered.length === 0 && (
+          <div className="text-center py-10 bg-card rounded-xl border border-border text-muted-foreground">
+            No reservations match your criteria.
+          </div>
+        )}
         {filtered.map((res) => (
           <div
-            key={res.id}
-            className="bg-card rounded-xl card-shadow p-4 lg:p-6"
+            key={res._id}
+            className={`bg-card rounded-xl card-shadow p-4 lg:p-6 border-l-4 ${res.status === 'confirmed' ? 'border-l-primary' : res.status === 'cancelled' ? 'border-l-destructive/50' : 'border-l-success'}`}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground">{res.date}</p>
+                <p className="font-semibold text-foreground">{new Date(res.date).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {res.slot} · {res.room}
+                  Slot {res.seance} · Room {res.salle}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-sm text-muted-foreground">
-                    DataShow: {res.datashow}
+                    DataShow: {res.datashow?.numero || 'Unknown'}
                   </span>
                   <span
                     className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full ${
                       res.status === "confirmed"
-                        ? "bg-success/20 text-success"
-                        : "bg-muted text-muted-foreground"
+                        ? "bg-primary/10 text-primary"
+                        : res.status === "cancelled"
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-success/20 text-success"
                     }`}
                   >
                     {res.status}
                   </span>
+                  <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-muted text-muted-foreground">
+                    {res.type}
+                  </span>
                 </div>
               </div>
               {res.status === "confirmed" && (
-                <button className="px-4 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors font-medium text-sm flex items-center gap-2 whitespace-nowrap">
+                <button 
+                  onClick={() => handleCancel(res._id)}
+                  className="px-4 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors font-medium text-sm flex items-center gap-2 whitespace-nowrap border border-transparent hover:border-destructive/20"
+                >
                   <X className="w-4 h-4" />
                   Cancel
                 </button>

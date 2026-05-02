@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   TrendingUp,
@@ -5,6 +6,10 @@ import {
   Check,
   AlertCircle,
   MonitorPlay,
+  Calendar,
+  Zap,
+  HelpCircle,
+  ArrowRight
 } from "lucide-react";
 import {
   BarChart,
@@ -17,91 +22,127 @@ import {
   Area,
   CartesianGrid,
 } from "recharts";
+import api from "../../services/api";
+import { Link } from "react-router-dom";
 
 const ProfessorDashboard = () => {
   const { user } = useAuth();
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const res = await api.get('/reservations/my');
+      setReservations(res.data);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeRes = reservations.filter(r => r.status === 'confirmed');
+  const completedRes = reservations.filter(r => r.status === 'completed');
+  
+  // Sort by date upcoming
+  const upcomingReservations = [...activeRes]
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .slice(0, 3);
 
   const stats = [
     {
       label: "Active Reservations",
-      value: "3",
-      change: "2 this week",
+      value: activeRes.length.toString(),
+      change: "Current bookings",
       icon: TrendingUp,
       color: "text-primary",
     },
     {
-      label: "This Week's Slots",
-      value: "12",
-      change: "4 available",
+      label: "Total Bookings",
+      value: reservations.length.toString(),
+      change: "All time",
       icon: Clock,
       color: "text-secondary",
     },
     {
       label: "Completed",
-      value: "28",
-      change: "+5 this month",
+      value: completedRes.length.toString(),
+      change: "Finished sessions",
       icon: Check,
       color: "text-success",
     },
     {
       label: "Pending Claims",
-      value: "1",
+      value: "0", 
       change: "Avg 2d response",
       icon: AlertCircle,
       color: "text-warning",
     },
   ];
 
-  const upcomingReservations = [
-    {
-      day: "Monday",
-      slot: "Slot S2",
-      room: "Room A-201",
-      datashow: "DS-004",
-      time: "10:00 - 11:30",
-    },
-    {
-      day: "Tuesday",
-      slot: "Slot S4",
-      room: "Room B-103",
-      datashow: "DS-007",
-      time: "14:00 - 15:30",
-    },
-    {
-      day: "Thursday",
-      slot: "Slot S1",
-      room: "Room A-201",
-      datashow: "DS-004",
-      time: "08:00 - 09:30",
-    },
-  ];
+  // Calculate usage by slot
+  const slotCount = { S1: 0, S2: 0, S3: 0, S4: 0, S5: 0, S6: 0 };
+  reservations.forEach(r => {
+    if (slotCount[r.seance] !== undefined) {
+      slotCount[r.seance]++;
+    }
+  });
+  const usageBySlot = Object.keys(slotCount).map(slot => ({ slot, count: slotCount[slot] }));
 
-  const usageBySlot = [
-    { slot: "S1", count: 8 },
-    { slot: "S2", count: 12 },
-    { slot: "S3", count: 6 },
-    { slot: "S4", count: 14 },
-    { slot: "S5", count: 9 },
-    { slot: "S6", count: 4 },
-  ];
-
+  // Mock monthly usage since we might not have enough historical data yet
   const monthlyUsage = [
     { month: "Jan", bookings: 8 },
     { month: "Feb", bookings: 12 },
     { month: "Mar", bookings: 15 },
-    { month: "Apr", bookings: 10 },
+    { month: "Apr", bookings: reservations.length },
   ];
+
+  if (loading) {
+    return <div className="text-center py-10 text-muted-foreground">Loading dashboard...</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Welcome header */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-          Welcome back, {user?.fullName?.split(" ")[0] || "Dr. Benali"}
+          Welcome back, {user?.fullName?.split(" ")[0] || "Professor"}
         </h1>
         <p className="mt-1 text-muted-foreground text-sm lg:text-base">
-          Here's your reservation overview for this week.
+          Here's your reservation overview.
         </p>
+      </div>
+
+      {/* Quick Start Guide */}
+      <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-2xl p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4">
+          <HelpCircle className="w-5 h-5 text-primary" />
+          Quick Start Guide: How to use the system
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">1</div>
+            <h3 className="font-semibold text-foreground">Set Schedule</h3>
+            <p className="text-sm text-muted-foreground">Go to <strong>My Schedule</strong> and fill in the rooms where you have classes. You only do this once.</p>
+            <Link to="/professor/schedule" className="text-sm font-medium text-primary hover:underline flex items-center gap-1 mt-2">Go to Schedule <ArrowRight className="w-4 h-4" /></Link>
+          </div>
+          <div className="space-y-2">
+            <div className="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center font-bold">2</div>
+            <h3 className="font-semibold text-foreground">Fast Booking</h3>
+            <p className="text-sm text-muted-foreground">Go to <strong>Book DataShow</strong>. Choose a date. We'll automatically find your class and assign a projector!</p>
+            <Link to="/professor/book" className="text-sm font-medium text-secondary hover:underline flex items-center gap-1 mt-2">Book a Device <ArrowRight className="w-4 h-4" /></Link>
+          </div>
+          <div className="space-y-2">
+            <div className="w-10 h-10 rounded-full bg-warning text-white flex items-center justify-center font-bold">3</div>
+            <h3 className="font-semibold text-foreground">Report Issues</h3>
+            <p className="text-sm text-muted-foreground">Missing a cable? Device broken? Go to <strong>Help/Claims</strong> to notify the administration immediately.</p>
+            <Link to="/professor/claims" className="text-sm font-medium text-warning hover:underline flex items-center gap-1 mt-2">Report Issue <ArrowRight className="w-4 h-4" /></Link>
+          </div>
+        </div>
       </div>
 
       {/* Stats grid */}
@@ -179,9 +220,12 @@ const ProfessorDashboard = () => {
           </h2>
         </div>
         <div className="divide-y divide-border">
-          {upcomingReservations.map((res, idx) => (
+          {upcomingReservations.length === 0 && (
+            <div className="p-4 text-center text-muted-foreground">No upcoming reservations.</div>
+          )}
+          {upcomingReservations.map((res) => (
             <div
-              key={idx}
+              key={res._id}
               className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
             >
               <div className="flex items-center gap-4">
@@ -190,15 +234,15 @@ const ProfessorDashboard = () => {
                 </div>
                 <div>
                   <p className="font-medium text-foreground">
-                    {res.day} — {res.slot}
+                    {new Date(res.date).toLocaleDateString('en-GB', { weekday: 'long' })} — Slot {res.seance}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {res.room} · {res.datashow}
+                    Room {res.salle} · DataShow: {res.datashow?.numero || 'Unknown'}
                   </p>
                 </div>
               </div>
               <span className="text-sm font-medium text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                {res.time}
+                {new Date(res.date).toLocaleDateString()}
               </span>
             </div>
           ))}

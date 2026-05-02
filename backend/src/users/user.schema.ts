@@ -8,14 +8,14 @@ export enum UserRole {
   ADMIN = 'ADMIN',
 }
 
-// Schedule slot type: each day has slots S1-S6
+// Each slot stores the room name (string). Empty string = no class.
 const ScheduleDaySchema = {
-  S1: { type: Boolean, default: false },
-  S2: { type: Boolean, default: false },
-  S3: { type: Boolean, default: false },
-  S4: { type: Boolean, default: false },
-  S5: { type: Boolean, default: false },
-  S6: { type: Boolean, default: false },
+  S1: { type: String, default: '' },
+  S2: { type: String, default: '' },
+  S3: { type: String, default: '' },
+  S4: { type: String, default: '' },
+  S5: { type: String, default: '' },
+  S6: { type: String, default: '' },
 };
 
 @Schema({ timestamps: true })
@@ -42,7 +42,7 @@ export class User {
       saturday: { type: ScheduleDaySchema, default: () => ({}) },
     }),
   )
-  schedule?: Record<string, Record<string, boolean>>;
+  schedule?: Record<string, Record<string, string>>;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -1,89 +1,236 @@
-import { MessageSquare, Reply, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MessageSquare, CheckCircle, X, Info, AlertTriangle, Clock } from "lucide-react";
+import api from "../../services/api";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const AdminClaims = () => {
-  const claims = [
-    {
-      id: 45,
-      title: "Lamp flickering",
-      professor: "Dr. Benali",
-      device: "DS-005",
-      date: "2026-04-10",
-      status: "open",
-    },
-    {
-      id: 44,
-      title: "No power output",
-      professor: "Dr. Amrani",
-      device: "DS-008",
-      date: "2026-04-08",
-      status: "open",
-    },
-    {
-      id: 43,
-      title: "Missing remote",
-      professor: "Dr. Belkacem",
-      device: "DS-003",
-      date: "2026-04-03",
-      status: "resolved",
-    },
-  ];
+  const [claims, setClaims] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [resolvingClaim, setResolvingClaim] = useState(null);
+  const [adminResponse, setAdminResponse] = useState("");
+  const [modalError, setModalError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info",
+    onConfirm: null,
+  });
+
+  useEffect(() => {
+    fetchClaims();
+  }, []);
+
+  const fetchClaims = async () => {
+    try {
+      const response = await api.get('/claims/all');
+      setClaims(response.data);
+    } catch (error) {
+      console.error("Failed to fetch claims:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openResolveModal = (claim) => {
+    setResolvingClaim(claim);
+    setAdminResponse("");
+    setModalError("");
+    setIsModalOpen(true);
+  };
+
+  const handleResolve = async () => {
+    setModalError("");
+    if (!adminResponse.trim()) {
+      setModalError("Please provide a resolution response.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await api.put(`/claims/${resolvingClaim._id}/resolve`, { adminResponse });
+      setIsModalOpen(false);
+      setResolvingClaim(null);
+      fetchClaims();
+      setConfirmModal({
+        isOpen: true,
+        title: "Success",
+        message: "Claim has been marked as resolved.",
+        type: "success",
+      });
+    } catch (error) {
+      console.error("Failed to resolve claim:", error);
+      setModalError("Failed to resolve claim.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const openClaims = claims.filter((c) => c.status === "open");
+  const resolvedClaims = claims.filter((c) => c.status === "resolved");
+  const filtered = filter === "all" ? claims : filter === "open" ? openClaims : resolvedClaims;
+
+  if (loading) {
+    return <div className="text-center py-10 text-muted-foreground">Loading claims...</div>;
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in relative">
+      <ConfirmModal
+        {...confirmModal}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+      />
+      
       {/* Header */}
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-2">
-          <MessageSquare className="w-8 h-8 text-purple-500" />
+        <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
+          <MessageSquare className="w-8 h-8 text-primary" />
           Claims Inbox
         </h1>
-        <p className="text-gray-600 text-sm lg:text-base mt-2">
-          {openClaims.length} open claims
+        <p className="text-muted-foreground text-sm lg:text-base mt-2">
+          Review and resolve equipment issues reported by professors.
         </p>
+      </div>
+
+      {/* How it works */}
+      <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm flex items-start gap-3">
+        <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+        <span className="text-muted-foreground">
+          <strong className="text-foreground">Workflow:</strong> A professor reports a broken cable, a faulty projector, etc. You review the claim, take action (e.g., create a <strong className="text-foreground">Repair</strong> in Maintenance), then come back here and click <strong className="text-foreground">Resolve</strong> to close the ticket with your response.
+        </span>
+      </div>
+
+      {/* Stats + Filter */}
+      <div className="flex flex-wrap items-center gap-3">
+        <button onClick={() => setFilter("all")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+          All ({claims.length})
+        </button>
+        <button onClick={() => setFilter("open")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'open' ? 'bg-warning text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+          <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Open ({openClaims.length})</span>
+        </button>
+        <button onClick={() => setFilter("resolved")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'resolved' ? 'bg-success text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+          <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5" /> Resolved ({resolvedClaims.length})</span>
+        </button>
       </div>
 
       {/* Claims List */}
       <div className="space-y-3">
-        {claims.map((claim) => (
+        {filtered.length === 0 && (
+          <div className="text-center py-10 bg-card rounded-xl border border-border text-muted-foreground">
+            No claims found.
+          </div>
+        )}
+        {filtered.map((claim) => (
           <div
-            key={claim.id}
+            key={claim._id}
             className={`rounded-xl border shadow-sm p-4 lg:p-6 ${
               claim.status === "open"
-                ? "bg-white border-gray-100"
-                : "bg-gray-50 border-gray-200"
+                ? "bg-card border-l-4 border-l-warning border-border"
+                : "bg-muted/30 border-border"
             }`}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900">
-                  Claim #{claim.id} — {claim.title}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${claim.status === 'open' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'}`}>
+                    {claim.status === 'open' ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
+                    {claim.status.toUpperCase()}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(claim.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+                <p className="font-semibold text-foreground mt-2">
+                  {claim.issueType} — DataShow {claim.datashowId}
                 </p>
-                <p className="text-sm text-gray-600 mt-1">
-                  {claim.professor} · {claim.device} · {claim.date}
+                <p className="text-sm text-muted-foreground mt-1">
+                  Reported by: <strong className="text-foreground">{claim.professeur?.fullName || "Unknown"}</strong>
+                </p>
+                <p className="text-sm text-foreground mt-3 bg-muted/50 p-3 rounded-lg">
+                  "{claim.description}"
                 </p>
                 {claim.status === "resolved" && (
-                  <p className="text-xs text-green-600 font-medium mt-2">
-                    ✓ Resolved
-                  </p>
+                  <div className="mt-3 bg-success/5 border border-success/20 p-3 rounded-lg">
+                    <p className="text-xs text-success font-medium flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> Resolved {claim.resolvedAt && `on ${new Date(claim.resolvedAt).toLocaleDateString()}`}
+                    </p>
+                    {claim.adminResponse && (
+                      <p className="text-sm text-foreground mt-1">
+                        {claim.adminResponse}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
               {claim.status === "open" && (
-                <div className="flex gap-2 whitespace-nowrap">
-                  <button className="flex items-center gap-2 px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors font-medium text-sm">
-                    <Reply className="w-4 h-4" />
-                    Reply
-                  </button>
-                  <button className="flex items-center gap-2 px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors font-medium text-sm">
-                    <CheckCircle className="w-4 h-4" />
-                    Resolve
-                  </button>
-                </div>
+                <button 
+                  onClick={() => openResolveModal(claim)}
+                  className="flex items-center gap-2 px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition-colors font-medium text-sm shrink-0"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Resolve
+                </button>
               )}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Modal */}
+      {isModalOpen && resolvingClaim && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <h2 className="text-lg font-semibold text-foreground">Resolve Claim</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-5 space-y-4">
+              {/* Context */}
+              <div className="bg-muted/50 p-3 rounded-lg text-sm">
+                <p className="text-muted-foreground"><strong className="text-foreground">{resolvingClaim.issueType}</strong> on DataShow {resolvingClaim.datashowId}</p>
+                <p className="text-muted-foreground mt-1">By: {resolvingClaim.professeur?.fullName}</p>
+              </div>
+
+              {modalError && (
+                <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">{modalError}</div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Your Response / Action Taken
+                </label>
+                <textarea
+                  placeholder="e.g. Cable replaced. Sent DS-004 to maintenance."
+                  value={adminResponse}
+                  onChange={(e) => setAdminResponse(e.target.value)}
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground resize-none"
+                  rows={4}
+                />
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-border flex justify-end gap-3">
+              <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Cancel</button>
+              <button
+                onClick={handleResolve}
+                disabled={submitting}
+                className="px-4 py-2 text-sm font-medium bg-success text-white rounded-lg hover:bg-success/90 transition-colors disabled:opacity-50"
+              >
+                {submitting ? "Resolving..." : "Mark as Resolved"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

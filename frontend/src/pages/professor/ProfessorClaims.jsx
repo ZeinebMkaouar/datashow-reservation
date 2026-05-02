@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { MessageSquare } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MessageSquare, Info, AlertCircle } from "lucide-react";
+import api from "../../services/api";
+import ConfirmModal from "../../components/ConfirmModal";
 
 const ProfessorClaims = () => {
   const [formData, setFormData] = useState({
@@ -7,20 +9,79 @@ const ProfessorClaims = () => {
     issueType: "",
     description: "",
   });
+  const [datashows, setDatashows] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info",
+    onConfirm: null,
+  });
+
+  useEffect(() => {
+    fetchDatashows();
+  }, []);
+
+  const fetchDatashows = async () => {
+    try {
+      const response = await api.get('/datashows');
+      setDatashows(response.data);
+    } catch (error) {
+      console.error("Failed to fetch datashows:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Claim submitted successfully");
-    setFormData({ datashowId: "", issueType: "", description: "" });
+    if (!formData.datashowId || !formData.issueType || !formData.description) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await api.post('/claims', formData);
+      setConfirmModal({
+        isOpen: true,
+        title: "Success",
+        message: "Your claim has been submitted successfully. The administration will review it soon.",
+        type: "success",
+      });
+      setFormData({ datashowId: "", issueType: "", description: "" });
+    } catch (error) {
+      console.error("Failed to submit claim:", error);
+      setConfirmModal({
+        isOpen: true,
+        title: "Error",
+        message: "Failed to submit claim. Please try again later.",
+        type: "error",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
+  if (loading) {
+    return <div className="text-center py-10 text-muted-foreground">Loading...</div>;
+  }
+
   return (
-    <div className="space-y-6 max-w-2xl animate-fade-in">
+    <div className="space-y-6 max-w-2xl animate-fade-in relative">
+      <ConfirmModal
+        {...confirmModal}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+      />
+
       {/* Header */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2">
@@ -32,23 +93,34 @@ const ProfessorClaims = () => {
         </p>
       </div>
 
+      {/* Info */}
+      <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm flex items-start gap-3">
+        <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+        <span className="text-muted-foreground">
+          <strong className="text-foreground">Support Workflow:</strong> Your claims are sent directly to the maintenance team. If a DataShow is reported as broken, it will be inspected and moved to <strong className="text-foreground">Maintenance</strong> if necessary.
+        </span>
+      </div>
+
       {/* Form */}
-      <div className="bg-card rounded-xl card-shadow p-6 lg:p-8">
+      <div className="bg-card rounded-xl card-shadow p-6 lg:p-8 border border-border">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* DataShow ID */}
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">
-              DataShow ID
+              Select DataShow
             </label>
-            <input
-              type="text"
+            <select
               name="datashowId"
-              placeholder="e.g. DS-004"
               value={formData.datashowId}
               onChange={handleChange}
               className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
               required
-            />
+            >
+              <option value="">Select a DataShow</option>
+              {datashows.map(ds => (
+                <option key={ds._id} value={ds.numero}>{ds.numero} — {ds.marque} {ds.modele}</option>
+              ))}
+            </select>
           </div>
 
           {/* Issue Type */}
@@ -63,23 +135,23 @@ const ProfessorClaims = () => {
               className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
               required
             >
-              <option value="">Select issue</option>
-              <option value="not-working">Not working</option>
-              <option value="poor-quality">Poor quality</option>
-              <option value="missing-accessories">Missing accessories</option>
-              <option value="damaged">Damaged</option>
-              <option value="other">Other</option>
+              <option value="">Select issue category</option>
+              <option value="not-working">Not working / Won't turn on</option>
+              <option value="poor-quality">Poor quality (Blurry/Dim)</option>
+              <option value="missing-accessories">Missing cables (HDMI/VGA/Remote)</option>
+              <option value="damaged">Physical damage</option>
+              <option value="other">Other issue</option>
             </select>
           </div>
 
           {/* Description */}
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">
-              Description
+              Detailed Description
             </label>
             <textarea
               name="description"
-              placeholder="Describe the issue in detail..."
+              placeholder="What exactly is the problem? Mention room number if relevant."
               value={formData.description}
               onChange={handleChange}
               rows="5"
@@ -91,18 +163,22 @@ const ProfessorClaims = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-primary text-primary-foreground py-2 rounded-lg font-semibold hover:opacity-90 transition-colors"
+            disabled={submitting}
+            className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            Submit Claim
+            {submitting ? "Submitting..." : (
+              <>
+                <AlertCircle className="w-4 h-4" />
+                Submit Claim
+              </>
+            )}
           </button>
         </form>
       </div>
 
-      {/* Info */}
-      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-        <p className="text-sm text-foreground">
-          <strong className="text-primary">Average response time:</strong> Claims are typically reviewed
-          within 24-48 hours.
+      <div className="text-center">
+        <p className="text-xs text-muted-foreground">
+          Claims are reviewed within 24-48 hours. For urgent technical support, please visit the IT office.
         </p>
       </div>
     </div>

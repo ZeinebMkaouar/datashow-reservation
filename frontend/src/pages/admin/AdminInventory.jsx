@@ -31,12 +31,17 @@ const AdminInventory = () => {
   });
 
   useEffect(() => {
-    fetchInventory();
-  }, []);
+    const delayDebounceFn = setTimeout(() => {
+      fetchInventory();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [search, filterStatus]);
 
   const fetchInventory = async () => {
     try {
-      const response = await api.get('/datashows');
+      const statusParam = filterStatus === 'all' ? '' : `&etat=${filterStatus}`;
+      const response = await api.get(`/datashows?search=${search}${statusParam}`);
       setInventory(response.data);
     } catch (error) {
       console.error("Failed to fetch datashows:", error);
@@ -107,15 +112,10 @@ const AdminInventory = () => {
   const disponibleCount = inventory.filter(i => i.etat === 'disponible').length;
   const enPanneCount = inventory.filter(i => i.etat === 'en_panne').length;
 
-  const filtered = inventory.filter((item) => {
-    const matchSearch =
-      item.numero.toLowerCase().includes(search.toLowerCase()) ||
-      item.marque.toLowerCase().includes(search.toLowerCase()) ||
-      item.modele.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "all" || item.etat === filterStatus;
+  const filtered = inventory.filter(item => {
     const matchBrand = filterBrand === "all" || item.marque === filterBrand;
-    return matchSearch && matchStatus && matchBrand;
-  });
+    return matchBrand;
+  }); // Brand filter remains frontend for now as it depends on current list brands
 
   const exportCSV = () => {
     const header = "ID,Brand,Model,Status,Purchase Date\n";

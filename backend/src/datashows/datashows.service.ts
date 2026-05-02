@@ -19,8 +19,19 @@ export class DataShowsService {
     return new this.dataShowModel(dto).save();
   }
 
-  async findAll(etat?: string): Promise<DataShowDocument[]> {
-    const filter = etat ? { etat } : {};
+  async findAll(query?: { search?: string; etat?: string }): Promise<DataShowDocument[]> {
+    const filter: any = {};
+    if (query?.etat) {
+      filter.etat = query.etat;
+    }
+    if (query?.search) {
+      const searchRegex = new RegExp(query.search, 'i');
+      filter.$or = [
+        { numero: searchRegex },
+        { marque: searchRegex },
+        { modele: searchRegex },
+      ];
+    }
     return this.dataShowModel.find(filter).sort({ numero: 1 }).exec();
   }
 

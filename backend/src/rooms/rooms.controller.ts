@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Put, Delete,
-  Body, Param, UseGuards,
+  Body, Param, UseGuards, Query,
 } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -15,8 +15,8 @@ export class RoomsController {
   constructor(private roomsService: RoomsService) {}
 
   @Get()
-  findAll() {
-    return this.roomsService.findAll();
+  findAll(@Query('search') search?: string) {
+    return this.roomsService.findAll(search);
   }
 
   @Get(':id')

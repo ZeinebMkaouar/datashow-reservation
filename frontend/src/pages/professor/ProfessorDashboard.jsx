@@ -29,6 +29,7 @@ const ProfessorDashboard = () => {
   const { user } = useAuth();
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [usageBySlot, setUsageBySlot] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -36,8 +37,24 @@ const ProfessorDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const res = await api.get('/reservations/my');
+      const [res, sessRes] = await Promise.all([
+        api.get('/reservations/my'),
+        api.get('/sessions')
+      ]);
+      
       setReservations(res.data);
+      
+      // Calculate usage by slot dynamically
+      const slotCount = {};
+      sessRes.data.forEach(s => slotCount[s.name] = 0);
+      
+      res.data.forEach(r => {
+        if (slotCount[r.seance] !== undefined) {
+          slotCount[r.seance]++;
+        }
+      });
+      
+      setUsageBySlot(Object.keys(slotCount).map(slot => ({ slot, count: slotCount[slot] })));
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
     } finally {
@@ -83,15 +100,6 @@ const ProfessorDashboard = () => {
       color: "text-warning",
     },
   ];
-
-  // Calculate usage by slot
-  const slotCount = { S1: 0, S2: 0, S3: 0, S4: 0, S5: 0, S6: 0 };
-  reservations.forEach(r => {
-    if (slotCount[r.seance] !== undefined) {
-      slotCount[r.seance]++;
-    }
-  });
-  const usageBySlot = Object.keys(slotCount).map(slot => ({ slot, count: slotCount[slot] }));
 
   // Mock monthly usage since we might not have enough historical data yet
   const monthlyUsage = [

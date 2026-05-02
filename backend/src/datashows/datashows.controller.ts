@@ -15,8 +15,11 @@ export class DataShowsController {
   constructor(private dataShowsService: DataShowsService) {}
 
   @Get()
-  findAll(@Query('etat') etat?: string) {
-    return this.dataShowsService.findAll(etat);
+  findAll(
+    @Query('etat') etat?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.dataShowsService.findAll({ etat, search });
   }
 
   @Get('available')

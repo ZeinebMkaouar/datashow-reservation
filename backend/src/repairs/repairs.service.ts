@@ -62,13 +62,52 @@ export class RepairsService {
   }
 
   /**
-   * Get all repairs.
+   * Get all repairs with searching.
    */
-  async findAll(): Promise<RepairDocument[]> {
-    return this.repairModel
-      .find()
-      .populate('datashow', 'numero marque modele etat')
-      .sort({ date: -1 })
-      .exec();
+  async findAll(search?: string): Promise<any[]> {
+    const pipeline: any[] = [
+      {
+        $lookup: {
+          from: 'datashows',
+          localField: 'datashow',
+          foreignField: '_id',
+          as: 'datashow',
+        },
+      },
+      { $unwind: '$datashow' },
+    ];
+
+    if (search) {
+      const searchRegex = { $regex: search, $options: 'i' };
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'datashow.numero': searchRegex },
+            { description: searchRegex },
+            { technician: searchRegex },
+          ],
+        },
+      });
+    }
+
+    pipeline.push({ $sort: { date: -1 } });
+
+    pipeline.push({
+      $project: {
+        _id: 1,
+        date: 1,
+        description: 1,
+        action: 1,
+        technician: 1,
+        status: 1,
+        'datashow._id': 1,
+        'datashow.numero': 1,
+        'datashow.marque': 1,
+        'datashow.modele': 1,
+        'datashow.etat': 1,
+      },
+    });
+
+    return this.repairModel.aggregate(pipeline).exec();
   }
 }

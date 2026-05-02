@@ -13,6 +13,8 @@ import AdminRooms from "./pages/admin/AdminRooms";
 import AdminMaintenance from "./pages/admin/AdminMaintenance";
 import AdminClaims from "./pages/admin/AdminClaims";
 import AdminWeeks from "./pages/admin/AdminWeeks";
+import AdminSessions from "./pages/admin/AdminSessions";
+import AdminReservations from "./pages/admin/AdminReservations";
 import Layout from "./components/Layout";
 import AdminLayout from "./components/AdminLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -98,6 +100,8 @@ function App() {
         <Route path="/admin/maintenance" element={<AdminMaintenance />} />
         <Route path="/admin/claims" element={<AdminClaims />} />
         <Route path="/admin/weeks" element={<AdminWeeks />} />
+        <Route path="/admin/sessions" element={<AdminSessions />} />
+        <Route path="/admin/reservations" element={<AdminReservations />} />
       </Route>
 
       {/* Default redirect */}

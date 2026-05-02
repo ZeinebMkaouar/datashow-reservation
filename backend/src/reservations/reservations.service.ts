@@ -181,26 +181,107 @@ export class ReservationsService {
   }
 
   /**
-   * Find all reservations for a professor.
+   * Find all reservations for a professor with filtering.
    */
-  async findByProfessor(userId: string): Promise<ReservationDocument[]> {
-    return this.reservationModel
-      .find({ professeur: new Types.ObjectId(userId) })
+  async findByProfessor(
+    userId: string,
+    query?: { search?: string; status?: string },
+  ): Promise<any[]> {
+    const filter: any = { professeur: new Types.ObjectId(userId) };
+
+    if (query?.status && query.status !== 'All Status') {
+      filter.status = query.status;
+    }
+
+    if (query?.search) {
+      const searchRegex = new RegExp(query.search, 'i');
+      filter.$or = [{ salle: searchRegex }];
+    }
+
+    let result = await this.reservationModel
+      .find(filter)
       .populate('datashow', 'numero marque modele etat')
       .sort({ date: -1 })
       .exec();
+
+    // Secondary filtering for DataShow number if search is provided
+    if (query?.search) {
+      const searchRegex = new RegExp(query.search, 'i');
+      result = result.filter((r: any) => 
+        r.salle?.match(searchRegex) || 
+        r.datashow?.numero?.match(searchRegex)
+      );
+    }
+
+    return result;
   }
 
   /**
-   * Find all reservations (admin view).
+   * Find all reservations (admin view) with filtering and searching.
    */
-  async findAll(): Promise<ReservationDocument[]> {
-    return this.reservationModel
-      .find()
-      .populate('professeur', 'fullName email')
-      .populate('datashow', 'numero marque modele etat')
-      .sort({ date: -1 })
-      .exec();
+  async findAll(query?: { search?: string; status?: string }): Promise<any[]> {
+    const pipeline: any[] = [
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'professeur',
+          foreignField: '_id',
+          as: 'professeur',
+        },
+      },
+      { $unwind: '$professeur' },
+      {
+        $lookup: {
+          from: 'datashows',
+          localField: 'datashow',
+          foreignField: '_id',
+          as: 'datashow',
+        },
+      },
+      { $unwind: '$datashow' },
+    ];
+
+    const match: any = {};
+    if (query?.status && query.status !== 'all') {
+      match.status = query.status;
+    }
+
+    if (query?.search) {
+      const searchRegex = { $regex: query.search, $options: 'i' };
+      match.$or = [
+        { salle: searchRegex },
+        { 'professeur.fullName': searchRegex },
+        { 'datashow.numero': searchRegex },
+      ];
+    }
+
+    if (Object.keys(match).length > 0) {
+      pipeline.push({ $match: match });
+    }
+
+    pipeline.push({ $sort: { date: -1 } });
+
+    // Project to match the expected format (populating usually returns object with _id, etc)
+    pipeline.push({
+      $project: {
+        _id: 1,
+        date: 1,
+        seance: 1,
+        salle: 1,
+        status: 1,
+        type: 1,
+        'professeur._id': 1,
+        'professeur.fullName': 1,
+        'professeur.email': 1,
+        'datashow._id': 1,
+        'datashow.numero': 1,
+        'datashow.marque': 1,
+        'datashow.modele': 1,
+        'datashow.etat': 1,
+      },
+    });
+
+    return this.reservationModel.aggregate(pipeline).exec();
   }
 
   /**

@@ -5,21 +5,43 @@ import { Repair, RepairDocument, RepairStatus } from './repair.schema';
 import { CreateRepairDto } from './dto/create-repair.dto';
 import { DataShowsService } from '../datashows/datashows.service';
 import { DataShowEtat } from '../datashows/datashow.schema';
+import { ReservationsService } from '../reservations/reservations.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class RepairsService {
   constructor(
     @InjectModel(Repair.name) private repairModel: Model<RepairDocument>,
     private dataShowsService: DataShowsService,
+    private reservationsService: ReservationsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   /**
    * Create a repair → Automatically set DataShow status to EN_PANNE.
+   * Also notify professors who have upcoming reservations for this DataShow.
    */
   async create(dto: CreateRepairDto): Promise<RepairDocument> {
-    // Auto-toggle DataShow to "en_panne"
+    // 1. Get DataShow info for the notification message
+    const datashow = await this.dataShowsService.findById(dto.datashow);
+    
+    // 2. Auto-toggle DataShow to "en_panne"
     await this.dataShowsService.updateEtat(dto.datashow, DataShowEtat.EN_PANNE);
 
+    // 3. Find active reservations to notify professors
+    const upcomingReservations = await this.reservationsService.findByDataShow(dto.datashow);
+    console.log(`[RepairsService] Found ${upcomingReservations.length} reservations to notify for DataShow ${datashow.numero}`);
+    
+    for (const res of upcomingReservations) {
+      await this.notificationsService.create(
+        res.professeur.toString(),
+        'DataShow en panne',
+        `Le DataShow (${datashow.numero}) que vous avez réservé pour le ${new Date(res.date).toLocaleDateString()} (Séance ${res.seance}) est actuellement en panne. Veuillez contacter l'administration pour une alternative.`,
+        res._id.toString()
+      );
+    }
+
+    // 4. Create repair record
     const repair = new this.repairModel({
       datashow: new Types.ObjectId(dto.datashow),
       date: new Date(dto.date),

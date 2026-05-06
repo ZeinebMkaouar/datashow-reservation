@@ -18,6 +18,7 @@ import {
   Clock,
 } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
+import ThemeToggle from "./ThemeToggle";
 
 const navItemsConfig = [
   { key: "nav.dashboard", url: "/admin/overview", icon: LayoutDashboard },
@@ -43,7 +44,7 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
+    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-background">
       {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div
@@ -109,12 +110,12 @@ const AdminLayout = () => {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 shrink-0 z-30 backdrop-blur-sm bg-white/95">
+        <header className="h-16 bg-white dark:bg-card border-b border-gray-200 dark:border-border flex items-center justify-between px-4 lg:px-6 shrink-0 z-30 backdrop-blur-sm bg-white/95 dark:bg-card/95">
           <div className="flex items-center gap-3">
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              className="lg:hidden p-2 -ml-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -125,22 +126,23 @@ const AdminLayout = () => {
             >
               <PanelLeft className={`w-5 h-5 transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`} />
             </button>
-            <span className="text-sm font-medium text-gray-500">{t("nav.adminPortal")}</span>
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t("nav.adminPortal")}</span>
           </div>
           
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <LanguageSwitcher />
-            <button className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors cursor-pointer">
+            <button className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors cursor-pointer">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold border border-white">
                 3
               </span>
             </button>
             <div className="hidden md:flex flex-col text-right">
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {user?.fullName}
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
                 {t('auth.adminRole')}
               </span>
             </div>

@@ -20,6 +20,7 @@ import {
   PanelLeft,
 } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
+import ThemeToggle from "./ThemeToggle";
 
 const Layout = () => {
   const { user, logout } = useAuth();
@@ -60,7 +61,7 @@ const Layout = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50">
+    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-background">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -127,7 +128,7 @@ const Layout = () => {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Top bar */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-4 lg:px-6 shrink-0 z-30 backdrop-blur-sm bg-white/95">
+        <header className="h-16 bg-white dark:bg-card border-b border-gray-200 dark:border-border flex items-center px-4 lg:px-6 shrink-0 z-30 backdrop-blur-sm bg-white/95 dark:bg-card/95">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
@@ -144,16 +145,17 @@ const Layout = () => {
               <PanelLeft className={`w-5 h-5 transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`} />
             </button>
 
-            <div className="flex items-center gap-2 text-gray-500">
-              <span className="text-sm font-medium text-gray-500">
+            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 {user?.role === 'ADMIN' ? t("nav.adminPortal") : t("nav.profPortal")}
               </span>
             </div>
           </div>
 
           <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
             <LanguageSwitcher />
-            <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
+            <button className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
               <Bell className="w-5 h-5" />
               <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white">
                 3

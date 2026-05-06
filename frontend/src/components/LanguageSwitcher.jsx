@@ -51,17 +51,17 @@ const LanguageSwitcher = () => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 h-10 px-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200/60 shadow-sm cursor-pointer"
+        className="flex items-center gap-2 h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200/60 dark:border-gray-700 shadow-sm cursor-pointer"
       >
         <currentLang.Flag />
-        <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+        <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
           {currentLang.code}
         </span>
-        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 dark:text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50">
+        <div className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-1.5 z-50">
           {languages.map((lang) => {
             const isActive = currentLangCode === lang.code;
             return (
@@ -73,8 +73,8 @@ const LanguageSwitcher = () => {
                 }}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors cursor-pointer ${
                   isActive 
-                    ? 'bg-blue-50 text-blue-700 font-semibold' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium'
+                    ? 'bg-blue-50 dark:bg-primary/20 text-blue-700 dark:text-primary-400 font-semibold' 
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white font-medium'
                 }`}
               >
                 <lang.Flag />

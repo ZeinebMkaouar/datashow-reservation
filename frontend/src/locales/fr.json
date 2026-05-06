@@ -329,6 +329,10 @@
       "fillAll": "Veuillez remplir tous les champs.",
       "addSuccess": "Séance ajoutée avec succès.",
       "addFail": "Échec de l'ajout de la séance.",
+      "editTitle": "Modifier la Séance",
+      "editBtn": "Modifier la Séance",
+      "editSuccess": "Séance modifiée avec succès.",
+      "editFail": "Échec de la modification de la séance.",
       "deleteTitle": "Supprimer la Séance",
       "deleteMsg": "Êtes-vous sûr de vouloir supprimer cette séance ?",
       "deleted": "Supprimée",
@@ -380,6 +384,12 @@
       "resolved": "Résolue",
       "resolvedMsg": "La réclamation a été résolue.",
       "resolveFail": "Échec de la résolution."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "markAll": "Tout marquer comme lu",
+      "empty": "Vous n'avez aucune notification.",
+      "viewAll": "Voir toutes les notifications"
     }
   }
 }

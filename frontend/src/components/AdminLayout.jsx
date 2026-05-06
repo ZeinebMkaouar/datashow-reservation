@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
+import NotificationDropdown from "./NotificationDropdown";
 
 const navItemsConfig = [
   { key: "nav.dashboard", url: "/admin/overview", icon: LayoutDashboard },
@@ -132,12 +133,7 @@ const AdminLayout = () => {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <LanguageSwitcher />
-            <button className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors cursor-pointer">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold border border-white">
-                3
-              </span>
-            </button>
+            <NotificationDropdown />
             <div className="hidden md:flex flex-col text-right">
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {user?.fullName}

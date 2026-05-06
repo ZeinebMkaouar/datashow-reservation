@@ -11,6 +11,7 @@ import { ReservationsModule } from './reservations/reservations.module';
 import { ClaimsModule } from './claims/claims.module';
 import { RepairsModule } from './repairs/repairs.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { SessionsModule } from './sessions/sessions.module';
     ClaimsModule,
     RepairsModule,
     SessionsModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

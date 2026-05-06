@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Clock, Plus, Trash2, X, Info } from "lucide-react";
+import { Clock, Plus, Trash2, X, Info, Edit2 } from "lucide-react";
 import api from "../../services/api";
 import ConfirmModal from "../../components/ConfirmModal";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,7 @@ const AdminSessions = () => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState(null);
   const [newSession, setNewSession] = useState({ name: "", startTime: "", endTime: "" });
   const [modalError, setModalError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -21,14 +22,34 @@ const AdminSessions = () => {
     catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
-  const handleAddSession = async () => {
+  const handleOpenModal = (session = null) => {
+    setModalError("");
+    if (session) {
+      setEditingSession(session);
+      setNewSession({ name: session.name, startTime: session.startTime, endTime: session.endTime });
+    } else {
+      setEditingSession(null);
+      setNewSession({ name: "", startTime: "", endTime: "" });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSaveSession = async () => {
     setModalError("");
     if (!newSession.name || !newSession.startTime || !newSession.endTime) { setModalError(t('adminSessions.fillAll')); return; }
     setSubmitting(true);
     try {
-      await api.post("/sessions", newSession);
-      setIsModalOpen(false); setNewSession({ name: "", startTime: "", endTime: "" }); fetchSessions();
-    } catch (e) { setModalError(t('adminSessions.addFail')); } finally { setSubmitting(false); }
+      if (editingSession) {
+        await api.put(`/sessions/${editingSession._id}`, newSession);
+        setConfirmModal({ isOpen: true, title: t('common.success'), message: t('adminSessions.editSuccess'), type: "success" });
+      } else {
+        await api.post("/sessions", newSession);
+        setConfirmModal({ isOpen: true, title: t('common.success'), message: t('adminSessions.addSuccess'), type: "success" });
+      }
+      setIsModalOpen(false); fetchSessions();
+    } catch (e) { 
+      setModalError(editingSession ? t('adminSessions.editFail') : t('adminSessions.addFail')); 
+    } finally { setSubmitting(false); }
   };
 
   const handleDelete = (id) => {
@@ -55,7 +76,7 @@ const AdminSessions = () => {
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2"><Clock className="w-8 h-8 text-primary" />{t('adminSessions.title')}</h1>
           <p className="text-muted-foreground mt-2">{t('adminSessions.subtitle')}</p>
         </div>
-        <button onClick={() => setIsModalOpen(true)} className="inline-flex items-center gap-2 rounded-3xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors">
+        <button onClick={() => handleOpenModal()} className="inline-flex items-center gap-2 rounded-3xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors">
           <Plus className="w-4 h-4" /> {t('adminSessions.addBtn')}
         </button>
       </div>
@@ -80,7 +101,8 @@ const AdminSessions = () => {
                 <td className="px-4 py-4 font-semibold text-foreground">{s.name}</td>
                 <td className="px-4 py-4 text-muted-foreground">{s.startTime}</td>
                 <td className="px-4 py-4 text-muted-foreground">{s.endTime}</td>
-                <td className="px-4 py-4 text-right">
+                <td className="px-4 py-4 text-right flex justify-end gap-2">
+                  <button onClick={() => handleOpenModal(s)} className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-muted hover:bg-primary/10 text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
                   <button onClick={() => handleDelete(s._id)} className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-muted hover:bg-destructive/10 text-destructive transition-colors"><Trash2 className="w-4 h-4" /></button>
                 </td>
               </tr>
@@ -92,7 +114,7 @@ const AdminSessions = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
           <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border flex flex-col">
             <div className="flex items-center justify-between p-5 border-b border-border">
-              <h2 className="text-lg font-semibold text-foreground">{t('adminSessions.addTitle')}</h2>
+              <h2 className="text-lg font-semibold text-foreground">{editingSession ? t('adminSessions.editTitle') : t('adminSessions.addTitle')}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
@@ -114,8 +136,8 @@ const AdminSessions = () => {
             </div>
             <div className="p-5 border-t border-border flex justify-end gap-3">
               <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{t('common.cancel')}</button>
-              <button onClick={handleAddSession} disabled={submitting} className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
-                {submitting ? t('common.pleaseWait') : t('adminSessions.addBtn')}
+              <button onClick={handleSaveSession} disabled={submitting} className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
+                {submitting ? t('common.pleaseWait') : (editingSession ? t('common.save') : t('adminSessions.addBtn'))}
               </button>
             </div>
           </div>

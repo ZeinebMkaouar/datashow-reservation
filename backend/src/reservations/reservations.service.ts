@@ -302,4 +302,18 @@ export class ReservationsService {
     reservation.status = ReservationStatus.CANCELLED;
     return reservation.save();
   }
+
+  /**
+   * Find active (confirmed) reservations for a specific DataShow.
+   */
+  async findByDataShow(datashowId: string): Promise<ReservationDocument[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return this.reservationModel.find({
+      datashow: new Types.ObjectId(datashowId),
+      status: ReservationStatus.CONFIRMED,
+      date: { $gte: today }
+    }).exec();
+  }
 }

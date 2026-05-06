@@ -329,6 +329,10 @@
       "fillAll": "Please fill all fields.",
       "addSuccess": "Session added successfully.",
       "addFail": "Failed to add session.",
+      "editTitle": "Edit Session",
+      "editBtn": "Update Session",
+      "editSuccess": "Session updated successfully.",
+      "editFail": "Failed to update session.",
       "deleteTitle": "Delete Session",
       "deleteMsg": "Are you sure you want to delete this session?",
       "deleted": "Deleted",
@@ -380,6 +384,12 @@
       "resolved": "Resolved",
       "resolvedMsg": "The claim has been resolved.",
       "resolveFail": "Failed to resolve."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "markAll": "Mark all as read",
+      "empty": "You have no notifications.",
+      "viewAll": "View all notifications"
     }
   }
 }

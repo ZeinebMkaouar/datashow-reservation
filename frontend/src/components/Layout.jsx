@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
+import NotificationDropdown from "./NotificationDropdown";
 
 const Layout = () => {
   const { user, logout } = useAuth();
@@ -155,12 +156,7 @@ const Layout = () => {
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle />
             <LanguageSwitcher />
-            <button className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border border-white">
-                3
-              </span>
-            </button>
+            <NotificationDropdown />
             <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm">
               {user?.fullName?.charAt(0) || "U"}
             </div>
